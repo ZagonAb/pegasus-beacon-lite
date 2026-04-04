@@ -2,13 +2,9 @@
 
 -  A theme for Pegasus Frontend, inspired by the Beacon Game Laucher.
 
-![screen0](https://github.com/ZagonAb/wtf-library/blob/71ad323ab55754aed909a2cd4dc837ab8c502e1a/.meta/screenshots/0.png)
+![screen0](https://github.com/ZagonAb/pegasus-beacon-lite/blob/0d5186ca66db82987eb46ba25e6a8b309f9ca5a6/.meta/screenshots/screen0.png)
 
-![screen1](https://github.com/ZagonAb/wtf-library/blob/71ad323ab55754aed909a2cd4dc837ab8c502e1a/.meta/screenshots/1.png)
-
-![screen2](https://github.com/ZagonAb/wtf-library/blob/71ad323ab55754aed909a2cd4dc837ab8c502e1a/.meta/screenshots/2.png)
-
-![screen3](https://github.com/ZagonAb/wtf-library/blob/71ad323ab55754aed909a2cd4dc837ab8c502e1a/.meta/screenshots/3.png)
+![screen1](https://github.com/ZagonAb/pegasus-beacon-lite/blob/0d5186ca66db82987eb46ba25e6a8b309f9ca5a6/.meta/screenshots/screen1.png)
 
 - **Icons:**  
   Some icons used in this project are provided by  
