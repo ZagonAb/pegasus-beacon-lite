@@ -11,7 +11,6 @@ FocusScope {
     property int currentGameIndex: 0
     property int viewMode: 0
     property bool gridModeActive: viewMode === 1
-
     property bool searchActive: false
     property string searchText: ""
 
@@ -25,13 +24,13 @@ FocusScope {
     readonly property var searchResultModel: {
         var t = searchText.trim().toLowerCase()
         if (t === "" || !searchActive) return []
-            var results = []
-            for (var i = 0; i < api.allGames.count; i++) {
-                var g = api.allGames.get(i)
-                if (g && g.title && g.title.toLowerCase().indexOf(t) !== -1)
-                    results.push(g)
-            }
-            return results
+        var results = []
+        for (var i = 0; i < api.allGames.count; i++) {
+            var g = api.allGames.get(i)
+            if (g && g.title && g.title.toLowerCase().indexOf(t) !== -1)
+                results.push(g)
+        }
+        return results
     }
 
     property var ratioMap: ({})
@@ -42,12 +41,17 @@ FocusScope {
     CollectionModel { id: collectionModel }
 
     property var fullCollectionList: collectionModel.buildFullList(collectionOrder)
-    property var activeCollectionEntry: fullCollectionList[currentCollectionIndex] || null
+    property var activeCollectionEntry: {
+        if (!fullCollectionList || fullCollectionList.length === 0) return null
+            var entry = fullCollectionList[currentCollectionIndex]
+            return entry !== undefined ? entry : null
+    }
 
     property var activeGameModel: {
         if (!activeCollectionEntry) return api.allGames
             if (activeCollectionEntry.isVirtual) {
-                return collectionModel.gamesForVirtual(activeCollectionEntry.virtualType)
+                var vm = collectionModel.gamesForVirtual(activeCollectionEntry.virtualType)
+                return vm !== undefined ? vm : api.allGames
             }
             var col = api.collections.get(activeCollectionEntry.realIndex)
             return col ? col.games : api.allGames
@@ -66,17 +70,17 @@ FocusScope {
     function _loadRatioMapFromMemory() {
         var saved = api.memory.get("arConfig")
         if (saved !== undefined && saved !== null) {
-            if (typeof saved === "object") {
+            if (typeof saved === "object")
                 root.ratioMap = JSON.parse(JSON.stringify(saved))
-            } else if (typeof saved === "string") {
+            else if (typeof saved === "string") {
                 try { root.ratioMap = JSON.parse(saved) } catch(e) { root.ratioMap = {} }
             }
         }
         var savedFill = api.memory.get("fillConfig")
         if (savedFill !== undefined && savedFill !== null) {
-            if (typeof savedFill === "object") {
+            if (typeof savedFill === "object")
                 root.fillMap = JSON.parse(JSON.stringify(savedFill))
-            } else if (typeof savedFill === "string") {
+            else if (typeof savedFill === "string") {
                 try { root.fillMap = JSON.parse(savedFill) } catch(e) { root.fillMap = {} }
             }
         }
@@ -85,7 +89,6 @@ FocusScope {
     function _loadCollectionOrder() {
         var count = api.collections.count
         var saved = api.memory.get("collectionOrder")
-
         if (saved && Array.isArray(saved) && saved.length === count) {
             var copy = saved.slice().sort(function(a, b) { return a - b })
             var valid = true
@@ -99,17 +102,17 @@ FocusScope {
         }
         var def = []
         for (var j = 0; j < count; j++) def.push(j)
-            collectionOrder = def
-            api.memory.set("collectionOrder", def)
+        collectionOrder = def
+        api.memory.set("collectionOrder", def)
     }
 
     function _loadBackgroundStyle() {
         var saved = api.memory.get("backgroundStyle")
         if (saved === "hills" || saved === "background" || saved === "screenshot" ||
-            saved === "ps-symbols" || saved === "pegasus")
+            saved === "ps-symbols" || saved === "firefly" || saved === "pegasus")
             root.backgroundStyle = saved
-            else
-                root.backgroundStyle = "background"
+        else
+            root.backgroundStyle = "background"
     }
 
     function _findCollectionIndex(realIdx, virtualType) {
@@ -118,8 +121,8 @@ FocusScope {
             var e = list[i]
             if (realIdx >= 0 && !e.isVirtual && e.realIndex === realIdx)
                 return i
-                if (virtualType !== "" && e.isVirtual && e.virtualType === virtualType)
-                    return i
+            if (virtualType !== "" && e.isVirtual && e.virtualType === virtualType)
+                return i
         }
         return 0
     }
@@ -131,10 +134,11 @@ FocusScope {
         var savedCol = api.memory.get("collectionIndex")
         var savedGame = api.memory.get("gameIndex")
         var savedMode = api.memory.get("viewMode")
-        if (savedCol !== undefined) currentCollectionIndex = Math.min(savedCol, fullCollectionList.length - 1)
-            if (savedGame !== undefined) currentGameIndex = savedGame
-                if (savedMode !== undefined) viewMode = savedMode
-                    root.forceActiveFocus()
+        if (savedCol !== undefined && fullCollectionList.length > 0)
+            currentCollectionIndex = Math.max(0, Math.min(savedCol, fullCollectionList.length - 1))
+        if (savedGame !== undefined) currentGameIndex = savedGame
+        if (savedMode !== undefined) viewMode = savedMode
+        root.forceActiveFocus()
     }
 
     function persistState() {
@@ -151,19 +155,19 @@ FocusScope {
 
     function _refocusActiveView() {
         if (configOpen || contextMenuOpen || searchActive) return
-            var loaders = [listViewLoader, gridViewLoader, bubblesLoader, detailListLoader]
-            var l = loaders[viewMode]
-            if (l && l.item) l.item.forceActiveFocus()
-                else root.forceActiveFocus()
+        var loaders = [listViewLoader, gridViewLoader, bubblesLoader, detailListLoader]
+        var l = loaders[viewMode]
+        if (l && l.item) l.item.forceActiveFocus()
+        else root.forceActiveFocus()
     }
 
     function _giveViewFocusFromSearch(resetToIndex0) {
         if (configOpen || contextMenuOpen) return
-            if (resetToIndex0) root.currentGameIndex = 0
-                var loaders = [listViewLoader, gridViewLoader, bubblesLoader, detailListLoader]
-                var l = loaders[viewMode]
-                if (l && l.item) l.item.forceActiveFocus()
-                    else root.forceActiveFocus()
+        if (resetToIndex0) root.currentGameIndex = 0
+        var loaders = [listViewLoader, gridViewLoader, bubblesLoader, detailListLoader]
+        var l = loaders[viewMode]
+        if (l && l.item) l.item.forceActiveFocus()
+        else root.forceActiveFocus()
     }
 
     function goNextCollection() {
@@ -211,51 +215,106 @@ FocusScope {
         id: bgArea
         anchors.fill: parent
 
+        property alias _bgA: _bgA
+        property alias _bgB: _bgB
+
         property var currentGame: {
             var model = (root.searchActive && root.searchText.trim() !== "")
-            ? root.searchResultModel
-            : root.activeGameModel
+                ? root.searchResultModel
+                : root.activeGameModel
             if (!model) return null
-                if (model.get) return model.get(root.currentGameIndex)
-                    var arr = model
-                    return (arr && arr.length) ? arr[root.currentGameIndex] : null
+            if (model.get) return model.get(root.currentGameIndex)
+            var arr = model
+            return (arr && arr.length) ? arr[root.currentGameIndex] : null
         }
 
         readonly property string _resolvedSrc: {
             var game = currentGame
             if (!game) return ""
-                if (root.backgroundStyle === "hills") return ""
-                    if (root.backgroundStyle === "ps-symbols") return ""
-                        if (root.backgroundStyle === "pegasus") return ""
-                            if (root.backgroundStyle === "screenshot")
-                                return game.assets.screenshot || ""
-                                return game.assets.background || game.assets.screenshot || ""
+            if (_isShaderMode) return ""
+            if (root.backgroundStyle === "screenshot")
+                return game.assets.screenshot || ""
+            return game.assets.background || game.assets.screenshot || ""
+        }
+
+        readonly property bool _isShaderMode: {
+            var s = root.backgroundStyle
+            return s === "hills" || s === "ps-symbols" || s === "firefly" || s === "pegasus"
         }
 
         property bool _showA: true
 
-        HillsShaderEffect {
+        Component {
+            id: compHills
+            HillsShaderEffect {
+                anchors.fill: parent
+                theme: themeManager.currentTheme === "light" ? 1.0 : 0.0
+            }
+        }
+
+        Component {
+            id: compPlay
+            PlayShaderEffect {
+                anchors.fill: parent
+                theme: themeManager.currentTheme === "light" ? 1.0 : 0.0
+            }
+        }
+
+        Component {
+            id: compFirefly
+            FireflyShaderEffect {
+                anchors.fill: parent
+                theme: themeManager.currentTheme === "light" ? 1.0 : 0.0
+            }
+        }
+
+        Component {
+            id: compPegasus
+            PegasusShaderEffect {
+                anchors.fill: parent
+                theme: themeManager.currentTheme === "light" ? 1.0 : 0.0
+            }
+        }
+
+        Loader {
+            id: shaderLoader
             anchors.fill: parent
-            theme: themeManager.currentTheme === "light" ? 1.0 : 0.0
-            visible: root.backgroundStyle === "hills"
-            opacity: root.backgroundStyle === "hills" ? 1.0 : 0.0
+            active: bgArea._isShaderMode
+
+            sourceComponent: {
+                switch (root.backgroundStyle) {
+                    case "hills": return compHills
+                    case "ps-symbols": return compPlay
+                    case "firefly": return compFirefly
+                    case "pegasus": return compPegasus
+                    default: return null
+                }
+            }
+
+            opacity: active && item ? 1.0 : 0.0
             Behavior on opacity { NumberAnimation { duration: 300 } }
         }
 
-        PlayShaderEffect {
-            anchors.fill: parent
-            theme: themeManager.currentTheme === "light" ? 1.0 : 0.0
-            visible: root.backgroundStyle === "ps-symbols"
-            opacity: root.backgroundStyle === "ps-symbols" ? 1.0 : 0.0
-            Behavior on opacity { NumberAnimation { duration: 300 } }
+        Timer {
+            id: _shaderUnloadTimer
+            interval: 320
+            onTriggered: shaderLoader.active = false
         }
 
-        PegasusShaderEffect {
-            anchors.fill: parent
-            theme: themeManager.currentTheme === "light" ? 1.0 : 0.0
-            visible: root.backgroundStyle === "pegasus"
-            opacity: root.backgroundStyle === "pegasus" ? 1.0 : 0.0
-            Behavior on opacity { NumberAnimation { duration: 300 } }
+        Connections {
+            target: root
+            function onBackgroundStyleChanged() {
+                if (bgArea._isShaderMode) {
+                    _shaderUnloadTimer.stop()
+                    shaderLoader.active = true
+                    if (_bgA) _bgA.source = ""
+                        if (_bgB) _bgB.source = ""
+                            bgArea._showA = true
+                } else {
+                    _shaderUnloadTimer.restart()
+                    _bgDebounce.restart()
+                }
+            }
         }
 
         Image {
@@ -264,8 +323,8 @@ FocusScope {
             fillMode: Image.Stretch
             smooth: true
             asynchronous: true
-            visible: root.backgroundStyle !== "hills" && root.backgroundStyle !== "ps-symbols" && root.backgroundStyle !== "pegasus"
-            opacity: (root.backgroundStyle !== "hills" && root.backgroundStyle !== "ps-symbols" && root.backgroundStyle !== "pegasus") && bgArea._showA ? 0.60 : 0.0
+            visible: !bgArea._isShaderMode
+            opacity: !bgArea._isShaderMode && bgArea._showA ? 0.60 : 0.0
             Behavior on opacity { NumberAnimation { duration: 300; easing.type: Easing.InOutQuad } }
         }
 
@@ -275,8 +334,8 @@ FocusScope {
             fillMode: Image.Stretch
             smooth: true
             asynchronous: true
-            visible: root.backgroundStyle !== "hills" && root.backgroundStyle !== "ps-symbols" && root.backgroundStyle !== "pegasus"
-            opacity: (root.backgroundStyle !== "hills" && root.backgroundStyle !== "ps-symbols" && root.backgroundStyle !== "pegasus") && !bgArea._showA ? 0.60 : 0.0
+            visible: !bgArea._isShaderMode
+            opacity: !bgArea._isShaderMode && !bgArea._showA ? 0.60 : 0.0
             Behavior on opacity { NumberAnimation { duration: 300; easing.type: Easing.InOutQuad } }
         }
 
@@ -287,27 +346,6 @@ FocusScope {
         }
 
         on_ResolvedSrcChanged: _bgDebounce.restart()
-
-        onVisibleChanged: {
-            if (root.backgroundStyle === "hills" || root.backgroundStyle === "ps-symbols" || root.backgroundStyle === "pegasus") {
-                _bgA.source = ""
-                _bgB.source = ""
-                _showA = true
-            }
-        }
-
-        Connections {
-            target: root
-            function onBackgroundStyleChanged() {
-                if (root.backgroundStyle === "hills" || root.backgroundStyle === "ps-symbols" || root.backgroundStyle === "pegasus") {
-                    bgArea._bgA.source = ""
-                    bgArea._bgB.source = ""
-                    bgArea._showA = true
-                } else {
-                    _bgDebounce.restart()
-                }
-            }
-        }
 
         function _loadNext() {
             var incoming = _showA ? _bgB : _bgA
@@ -336,15 +374,15 @@ FocusScope {
             id: rectopa
             anchors.fill: parent
             color: themeManager.currentTheme === "dark" ? "#0D0D0D" : "#E8ECEF"
-            opacity: (root.backgroundStyle === "hills" || root.backgroundStyle === "ps-symbols" || root.backgroundStyle === "pegasus")
-            ? 0.0
-            : (themeManager.currentTheme === "dark" ? 0.7 : 0.05)
+            opacity: bgArea._isShaderMode
+                ? 0.0
+                : (themeManager.currentTheme === "dark" ? 0.7 : 0.05)
             Behavior on opacity { NumberAnimation { duration: 300 } }
         }
 
         Rectangle {
             anchors.fill: parent
-            visible: root.backgroundStyle !== "hills" && root.backgroundStyle !== "ps-symbols" && root.backgroundStyle !== "pegasus"
+            visible: !bgArea._isShaderMode
             gradient: Gradient {
                 orientation: Gradient.Horizontal
                 GradientStop { position: 0.0; color: themeManager.currentTheme === "dark" ? "#CC000000" : "#CCFFFFFF" }
@@ -377,8 +415,8 @@ FocusScope {
             Text {
                 text: {
                     if (isNaN(api.device.batteryPercent)) return "AC-POWER ⚡"
-                        var pct = Math.round(api.device.batteryPercent * 100)
-                        return (api.device.batteryCharging ? "⚡ " : "") + pct + "%"
+                    var pct = Math.round(api.device.batteryPercent * 100)
+                    return (api.device.batteryCharging ? "⚡ " : "") + pct + "%"
                 }
                 color: themeManager.color("textSecondary")
                 font { family: global.fonts.sans; pixelSize: vpx(18) }
@@ -654,8 +692,8 @@ FocusScope {
                     onClicked: {
                         if (root.searchActive)
                             root.closeSearch()
-                            else
-                                root.openSearch()
+                        else
+                            root.openSearch()
                     }
                 }
             }
@@ -739,9 +777,14 @@ FocusScope {
                 ? root.searchResultModel
                 : root.activeGameModel
                 if (!model) return null
-                    if (model.get) return model.get(root.currentGameIndex)
-                        var arr = model
-                        return (arr && arr.length) ? arr[root.currentGameIndex] : null
+                    var count = model.count !== undefined ? model.count : (model.length || 0)
+                    if (count === 0) return null
+                        var idx = Math.min(root.currentGameIndex, count - 1)
+                        if (model.get) {
+                            var g = model.get(idx)
+                            return g !== undefined ? g : null
+                        }
+                        return (model.length && idx < model.length) ? model[idx] : null
             }
 
             Image {
@@ -787,15 +830,22 @@ FocusScope {
                 bottomMargin: vpx(-5)
             }
             height: vpx(48)
+
             property var selGame: {
                 var model = (root.searchActive && root.searchText.trim() !== "")
                 ? root.searchResultModel
                 : root.activeGameModel
                 if (!model) return null
-                    if (model.get) return model.get(root.currentGameIndex)
-                        var arr = model
-                        return (arr && arr.length) ? arr[root.currentGameIndex] : null
+                    var count = model.count !== undefined ? model.count : (model.length || 0)
+                    if (count === 0) return null
+                        var idx = Math.min(root.currentGameIndex, count - 1)
+                        if (model.get) {
+                            var g = model.get(idx)
+                            return g !== undefined ? g : null
+                        }
+                        return (model.length && idx < model.length) ? model[idx] : null
             }
+
             Row {
                 spacing: vpx(40)
 
@@ -810,14 +860,15 @@ FocusScope {
                     Text {
                         text: {
                             if (!listMetaRow.selGame || listMetaRow.selGame.releaseYear === 0) return ""
-                                var d = listMetaRow.selGame.release
-                                if (d && !isNaN(d.getTime())) return Qt.formatDate(d, "MMM d, yyyy")
-                                    return listMetaRow.selGame.releaseYear.toString()
+                            var d = listMetaRow.selGame.release
+                            if (d && !isNaN(d.getTime())) return Qt.formatDate(d, "MMM d, yyyy")
+                            return listMetaRow.selGame.releaseYear.toString()
                         }
                         color: themeManager.color("textPrimary")
                         font { family: global.fonts.sans; pixelSize: vpx(18); bold: true }
                     }
                 }
+
                 Column {
                     spacing: vpx(4)
                     visible: listMetaRow.selGame ? listMetaRow.selGame.genre !== "" : false
@@ -834,6 +885,7 @@ FocusScope {
                         width: vpx(280)
                     }
                 }
+
                 Column {
                     spacing: vpx(4)
                     visible: listMetaRow.selGame ? listMetaRow.selGame.developer !== "" : false
@@ -848,6 +900,7 @@ FocusScope {
                         font { family: global.fonts.sans; pixelSize: vpx(18); bold: true }
                     }
                 }
+
                 Column {
                     spacing: vpx(4)
                     visible: listMetaRow.selGame ? listMetaRow.selGame.publisher !== "" : false
@@ -961,9 +1014,8 @@ FocusScope {
             var curVirtType = (curEntry && curEntry.isVirtual) ? curEntry.virtualType : ""
 
             var saved = api.memory.get("collectionOrder")
-            if (saved && Array.isArray(saved) && saved.length === api.collections.count) {
+            if (saved && Array.isArray(saved) && saved.length === api.collections.count)
                 root.collectionOrder = saved.slice()
-            }
 
             Qt.callLater(function() {
                 var idx = root._findCollectionIndex(curRealIdx, curVirtType)
@@ -978,14 +1030,21 @@ FocusScope {
     }
 
     Keys.onPressed: {
-        if (api.keys.isDetails(event) && !root.configOpen && !root.contextMenuOpen) {
+        if (api.keys.isFilters(event) && !root.configOpen && !root.contextMenuOpen) {
             event.accepted = true
             root.openSettings()
             return
         }
-        if (api.keys.isFilters(event) && !root.configOpen && !root.contextMenuOpen) {
-            event.accepted = false
-            return
+        if (api.keys.isDetails(event) && !root.configOpen && !root.contextMenuOpen) {
+            event.accepted = true
+            var model = root.searchActive ? root.searchResultModel : root.activeGameModel
+            var game = null
+            if (model) {
+                if (model.get) game = model.get(root.currentGameIndex)
+                    else if (model.length) game = model[root.currentGameIndex]
+            }
+            if (game) globalContextMenu.open(game)
+                return
         }
     }
 
@@ -1025,8 +1084,8 @@ FocusScope {
         onFocusRestoreRequested: {
             if (root._activeViewItem && typeof root._activeViewItem.restoreFocus === "function")
                 root._activeViewItem.restoreFocus()
-                else
-                    root._refocusActiveView()
+            else
+                root._refocusActiveView()
         }
     }
 }

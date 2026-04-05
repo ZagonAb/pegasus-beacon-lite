@@ -13,7 +13,6 @@ FocusScope {
     property var ratioMap: ({})
     property var fillMap: ({})
     property string backgroundStyle: "background"
-
     property bool isOpen: false
     property int currentSection: 0
     property bool rightFocused: false
@@ -385,9 +384,10 @@ FocusScope {
                     readonly property var _modeNames: ["Gallery", "Grid", "Bubbles", "List"]
 
                     readonly property var _bgStyleLabels: ({
-                        "hills":      "Hills",
+                        "hills": "Hills",
                         "ps-symbols": "PS Symbols",
-                        "pegasus":    "Pegasus",
+                        "firefly": "Firefly",
+                        "pegasus": "Pegasus Frontend",
                         "background": "Background",
                         "screenshot": "Screenshot"
                     })
@@ -827,7 +827,7 @@ FocusScope {
             z: 20
             currentStyle: root.backgroundStyle
             anchorItem: bgStyleRow
-            openDirection: "up"
+            openDirection: "down"
             anchorAlignment: "left"
 
             Component.onCompleted: loadFromMemory()
