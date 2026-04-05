@@ -20,6 +20,13 @@ FocusScope {
 
     function restoreFocus() { lv.forceActiveFocus() }
 
+    function restorePosition() {
+        if (root.currentGameIndex > 0)
+            lv.positionViewAtIndex(root.currentGameIndex, ListView.Center)
+    }
+
+    Component.onCompleted: Qt.callLater(restorePosition)
+
     property bool _acceptHeld: false
 
     Timer {

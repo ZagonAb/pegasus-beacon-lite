@@ -6,7 +6,7 @@ FocusScope {
 
     property var gameModel
     property int currentGameIndex: 0
-    property var collectionEntry:  null
+    property var collectionEntry: null
     property var ratioMap: ({})
     property var fillMap: ({})
 
@@ -17,6 +17,11 @@ FocusScope {
     signal contextMenuRequested(var game)
 
     function restoreFocus() { flick.forceActiveFocus() }
+
+    function restorePosition() {
+        if (root.currentGameIndex > 0)
+            Qt.callLater(function() { root.ensureVisible(root.currentGameIndex) })
+    }
 
     property bool _acceptHeld: false
 
@@ -112,12 +117,21 @@ FocusScope {
             loadTimer.start()
     }
 
+    property bool _initialLoad: true
+
     onGameModelChanged: {
-        root.currentGameIndex = 0
+        if (_initialLoad) {
+            _initialLoad = false
+        } else {
+            root.currentGameIndex = 0
+        }
         Qt.callLater(_startPrioritizedLoad)
     }
     onGameCountChanged: Qt.callLater(_startPrioritizedLoad)
-    Component.onCompleted: Qt.callLater(_startPrioritizedLoad)
+    Component.onCompleted: {
+        Qt.callLater(_startPrioritizedLoad)
+        Qt.callLater(restorePosition)
+    }
 
     function animateSelection(index) {
         animatingIndex = index
@@ -349,8 +363,6 @@ FocusScope {
                         var shadowColor = isDarkTheme ? "rgba(255,255,255,0.25)" : "rgba(0,0,0,0.35)"
                         var shineColor = isDarkTheme ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.45)"
                         var bubbleColor = isDarkTheme ? "rgba(30,30,40,0.7)" : "rgba(245,245,250,0.7)"
-
-                        // Sombra del borde
                         var edgeShadow = ctx.createRadialGradient(cx, cy, r * 0.6, cx, cy, r)
                         edgeShadow.addColorStop(0, "rgba(0,0,0,0)")
                         edgeShadow.addColorStop(1, shadowColor)
@@ -377,9 +389,9 @@ FocusScope {
                         ctx.save()
                         ctx.translate(0, -flick.contentY)
 
-                        var viewTop    = flick.contentY
+                        var viewTop = flick.contentY
                         var viewBottom = viewTop + flick.height
-                        var margin     = vpx(200)
+                        var margin  = vpx(200)
 
                         for (var i = 0; i < root.gameCount; i++) {
                             var lo = root.layoutOf(i)
@@ -406,9 +418,9 @@ FocusScope {
                     Connections {
                         target: root
                         function onCurrentGameIndexChanged() { activeCanvas.requestPaint() }
-                        function onActiveFocusChanged()      { activeCanvas.requestPaint() }
-                        function onAnimatedOffsetXChanged()  { activeCanvas.requestPaint() }
-                        function onAnimatedOffsetYChanged()  { activeCanvas.requestPaint() }
+                        function onActiveFocusChanged() { activeCanvas.requestPaint() }
+                        function onAnimatedOffsetXChanged() { activeCanvas.requestPaint() }
+                        function onAnimatedOffsetYChanged() { activeCanvas.requestPaint() }
                         function onAnimatedRotationChanged() { activeCanvas.requestPaint() }
                     }
                     Connections {
@@ -434,7 +446,6 @@ FocusScope {
                             ctx.beginPath()
                             ctx.arc(cx, cy, r + 2, 0, Math.PI * 2)
                             ctx.stroke()
-
                             ctx.restore()
                     }
                 }
@@ -478,7 +489,6 @@ FocusScope {
 
             property var gameData
             property int itemIdx: -1
-
             property var lo: root.layoutOf(itemIdx)
             property real d: (lo.rowType === 3) ? root.bSize : root.bSizeAlt
             property real cx: root.bubbleCX(lo)

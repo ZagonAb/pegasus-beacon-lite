@@ -127,24 +127,77 @@ FocusScope {
         return 0
     }
 
+    Timer {
+        id: clearStateTimer
+        interval: 1500
+        repeat: false
+        onTriggered: {
+            console.log("[theme] clearStateTimer fired — unsetting collectionIndex, gameIndex, gameTitle")
+            api.memory.unset("collectionIndex")
+            api.memory.unset("gameIndex")
+            api.memory.unset("gameTitle")
+            console.log("[theme] after unset — collectionIndex:", api.memory.get("collectionIndex"), "gameIndex:", api.memory.get("gameIndex"), "gameTitle:", api.memory.get("gameTitle"))
+        }
+    }
+
+    function _findGameIndexByTitle(title) {
+        var model = root.activeGameModel
+        if (!model || !title) return -1
+        var count = model.count !== undefined ? model.count : (model.length || 0)
+        for (var i = 0; i < count; i++) {
+            var g = model.get ? model.get(i) : model[i]
+            if (g && g.title === title) return i
+        }
+        return -1
+    }
+
     Component.onCompleted: {
         _loadRatioMapFromMemory()
         _loadCollectionOrder()
         _loadBackgroundStyle()
         var savedCol = api.memory.get("collectionIndex")
         var savedGame = api.memory.get("gameIndex")
+        var savedTitle = api.memory.get("gameTitle")
         var savedMode = api.memory.get("viewMode")
+        console.log("[theme] onCompleted — savedCol:", savedCol, "savedGame:", savedGame, "savedTitle:", savedTitle, "savedMode:", savedMode)
         if (savedCol !== undefined && fullCollectionList.length > 0)
             currentCollectionIndex = Math.max(0, Math.min(savedCol, fullCollectionList.length - 1))
-        if (savedGame !== undefined) currentGameIndex = savedGame
         if (savedMode !== undefined) viewMode = savedMode
+        if (savedTitle !== undefined && savedTitle !== "") {
+            Qt.callLater(function() {
+                var idx = _findGameIndexByTitle(savedTitle)
+                console.log("[theme] restore by title:", savedTitle, "-> index:", idx)
+                currentGameIndex = (idx >= 0) ? idx : 0
+            })
+        } else if (savedGame !== undefined) {
+            currentGameIndex = savedGame
+        }
+        if (savedCol !== undefined || savedGame !== undefined || savedTitle !== undefined) {
+            console.log("[theme] came from game — starting clearStateTimer")
+            clearStateTimer.start()
+        } else {
+            console.log("[theme] normal startup — no saved indices to clear")
+        }
         root.forceActiveFocus()
     }
 
     function persistState() {
+        var entry = root.activeCollectionEntry
         api.memory.set("collectionIndex", currentCollectionIndex)
-        api.memory.set("gameIndex", currentGameIndex)
         api.memory.set("viewMode", viewMode)
+        if (entry && entry.isVirtual) {
+            var model = root.activeGameModel
+            var g = model ? (model.get ? model.get(currentGameIndex) : model[currentGameIndex]) : null
+            if (g && g.title) {
+                api.memory.set("gameTitle", g.title)
+                api.memory.unset("gameIndex")
+                console.log("[theme] persistState virtual — title:", g.title)
+            }
+        } else {
+            api.memory.set("gameIndex", currentGameIndex)
+            api.memory.unset("gameTitle")
+            console.log("[theme] persistState normal — index:", currentGameIndex)
+        }
     }
 
     function toggleView() {

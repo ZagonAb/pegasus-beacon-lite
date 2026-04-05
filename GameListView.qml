@@ -5,12 +5,12 @@ import "utils.js" as Utils
 FocusScope {
     id: root
 
-    property var  gameModel
-    property int  currentGameIndex: 0
-    property bool hasFocus:         false
-    property var    collectionEntry: null
-    property var    ratioMap:        ({})
-    property var    fillMap:         ({})
+    property var gameModel
+    property int currentGameIndex: 0
+    property bool hasFocus: false
+    property var collectionEntry: null
+    property var ratioMap: ({})
+    property var fillMap: ({})
 
     readonly property string activeRatio: {
         var _map = ratioMap
@@ -52,8 +52,23 @@ FocusScope {
 
     function restoreFocus() { carousel.forceActiveFocus() }
 
-    readonly property int cornerRadius: vpx(14)
+    function restorePosition() {
+        var idx = root.currentGameIndex
+        if (idx <= 0) return
+        carousel.highlightMoveDuration = 0
+        carousel.positionViewAtIndex(idx, ListView.Beginning)
+        Qt.callLater(function() {
+            carousel.highlightMoveDuration = 220
+        })
+    }
 
+    Component.onCompleted: {
+        Qt.callLater(function() {
+            Qt.callLater(restorePosition)
+        })
+    }
+
+    readonly property int cornerRadius: vpx(14)
     property bool _acceptHeld: false
 
     Timer {
@@ -69,16 +84,16 @@ FocusScope {
     }
 
     readonly property int featuredW_portrait: vpx(250)
-    readonly property int thumbW_portrait:    vpx(180)
+    readonly property int thumbW_portrait: vpx(180)
     readonly property int featuredW_landscape: vpx(380)
-    readonly property int thumbW_landscape:    vpx(240)
+    readonly property int thumbW_landscape: vpx(240)
 
     readonly property int featuredW: isLandscapeRatio ? featuredW_landscape : featuredW_portrait
-    readonly property int thumbW:    isLandscapeRatio ? thumbW_landscape    : thumbW_portrait
+    readonly property int thumbW: isLandscapeRatio ? thumbW_landscape : thumbW_portrait
 
     readonly property var _heights: Utils.listViewHeights(featuredW, thumbW, activeRatio)
     readonly property int featuredH: _heights.featuredH
-    readonly property int thumbH:    _heights.thumbH
+    readonly property int thumbH: _heights.thumbH
 
     ListView {
         id: carousel
