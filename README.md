@@ -1,4 +1,4 @@
-# PEGASUS BEACON LAUNCHER
+# PEGASUS BEACON LITE
 
 -  A theme for Pegasus Frontend, inspired by the Beacon Game Launcher.
 
