@@ -1,6 +1,6 @@
 # PEGASUS BEACON LAUNCHER
 
--  A theme for Pegasus Frontend, inspired by the Beacon Game Laucher.
+-  A theme for Pegasus Frontend, inspired by the Beacon Game Launcher.
 
 ![screen0](https://github.com/ZagonAb/pegasus-beacon-lite/blob/0d5186ca66db82987eb46ba25e6a8b309f9ca5a6/.meta/screenshots/screen0.png)
 
