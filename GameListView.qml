@@ -39,9 +39,26 @@ FocusScope {
 
     readonly property bool backdropEnabled: activeRatio !== ""
 
-    readonly property bool isLandscapeRatio: {
+    readonly property bool isWidescreenRatio: {
         var r = activeRatio
-        return r === "4:3" || r === "8:7" || r === "1:1"
+        return r === "8:7" || r === "1:1"
+    }
+
+    readonly property bool isFourThreeRatio: activeRatio === "4:3"
+
+    readonly property int featuredW_fourThree: vpx(500)
+    readonly property int thumbW_fourThree: vpx(320)
+
+    readonly property int featuredW: {
+        if (isFourThreeRatio) return featuredW_fourThree
+            if (isWidescreenRatio) return featuredW_landscape
+                return featuredW_portrait
+    }
+
+    readonly property int thumbW: {
+        if (isFourThreeRatio) return thumbW_fourThree
+            if (isWidescreenRatio) return thumbW_landscape
+                return thumbW_portrait
     }
 
     signal gameSelected(var game)
@@ -87,10 +104,6 @@ FocusScope {
     readonly property int thumbW_portrait: vpx(180)
     readonly property int featuredW_landscape: vpx(380)
     readonly property int thumbW_landscape: vpx(240)
-
-    readonly property int featuredW: isLandscapeRatio ? featuredW_landscape : featuredW_portrait
-    readonly property int thumbW: isLandscapeRatio ? thumbW_landscape : thumbW_portrait
-
     readonly property var _heights: Utils.listViewHeights(featuredW, thumbW, activeRatio)
     readonly property int featuredH: _heights.featuredH
     readonly property int thumbH: _heights.thumbH

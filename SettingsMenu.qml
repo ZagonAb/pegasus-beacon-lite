@@ -78,15 +78,14 @@ FocusScope {
         color: "#000000"
         opacity: root.isOpen ? 0.82 : 0.0
         Behavior on opacity { NumberAnimation { duration: 220 } }
-        MouseArea { anchors.fill: parent; onClicked: root._close() }
     }
 
     Rectangle {
         id: mainPanel
         anchors.centerIn: parent
-        width: Math.round(parent.width * 0.90)
-        height: Math.round(parent.height * 0.90)
-        radius: vpx(16)
+        width: parent.width
+        height: parent.height
+        radius: vpx(0)
         color: themeManager.color("surface")
         border { width: vpx(1); color: themeManager.color("border") }
 
@@ -99,7 +98,7 @@ FocusScope {
             id: panelHeader
             anchors { top: parent.top; left: parent.left; right: parent.right }
             height: vpx(62)
-            radius: vpx(16)
+            radius: vpx(0)
             color: themeManager.color("surfaceElevated")
             border { width: vpx(1); color: themeManager.color("border") }
 
@@ -110,16 +109,17 @@ FocusScope {
             }
 
             Row {
+                id: rowPanel
                 anchors { left: parent.left; leftMargin: vpx(28); verticalCenter: parent.verticalCenter }
                 spacing: vpx(14)
                 Text {
-                    text: "←"
+                    text: "•"
                     color: themeManager.color("textTertiary")
                     font { family: global.fonts.condensed; pixelSize: vpx(24) }
                     anchors.verticalCenter: parent.verticalCenter
                 }
                 Text {
-                    text: "Configuration"
+                    text: "Pegasus Beacon Lite"
                     color: themeManager.color("textPrimary")
                     font { family: global.fonts.sans; pixelSize: vpx(24); bold: true }
                     anchors.verticalCenter: parent.verticalCenter
@@ -130,31 +130,37 @@ FocusScope {
                 anchors { horizontalCenter: parent.horizontalCenter; verticalCenter: parent.verticalCenter }
                 text: root.sections[root.currentSection].label
                 color: themeManager.color("textTertiary")
-                font { family: global.fonts.sans; pixelSize: vpx(15) }
+                font { family: global.fonts.sans; pixelSize: vpx(18) }
             }
 
             Row {
+                id: closeBtnRow
                 anchors { right: parent.right; rightMargin: vpx(28); verticalCenter: parent.verticalCenter }
                 spacing: vpx(8)
                 Rectangle {
-                    width: vpx(24)
-                    height: vpx(24)
-                    radius: vpx(12)
+                    width: vpx(32)
+                    height: vpx(32)
+                    radius: width / 2
                     color: themeManager.color("iconPrimary")
                     anchors.verticalCenter: parent.verticalCenter
                     Text {
                         anchors.centerIn: parent
                         text: "B"
                         color: themeManager.color("surface")
-                        font { family: global.fonts.condensed; pixelSize: vpx(13); bold: true }
+                        font { family: global.fonts.condensed; pixelSize: vpx(20); bold: true }
                     }
                 }
                 Text {
                     text: "Close"
                     color: themeManager.color("textSecondary")
-                    font { family: global.fonts.sans; pixelSize: vpx(15) }
+                    font { family: global.fonts.sans; pixelSize: vpx(20) }
                     anchors.verticalCenter: parent.verticalCenter
                 }
+            }
+
+            MouseArea {
+                anchors.fill: closeBtnRow
+                onClicked: root._close()
             }
         }
 
@@ -769,7 +775,7 @@ FocusScope {
             id: panelFooter
             anchors { bottom: parent.bottom; left: parent.left; right: parent.right }
             height: vpx(50)
-            radius: vpx(16)
+            radius: vpx(0)
             color: themeManager.color("surfaceElevated")
             border { width: vpx(1); color: themeManager.color("border") }
 

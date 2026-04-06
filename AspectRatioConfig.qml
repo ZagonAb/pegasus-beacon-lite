@@ -30,13 +30,44 @@ FocusScope {
 
     readonly property var fillKeys: ["PreserveAspectFit", "Stretch", "PreserveAspectCrop"]
     readonly property var fillLabels: ({
-        "PreserveAspectFit": "Preserve Aspect Fit",
+        "PreserveAspectFit" : "Preserve Aspect Fit",
         "Stretch": "Stretch",
         "PreserveAspectCrop": "Preserve Aspect Crop"
     })
 
     property var configEntries: []
     property string focusSection: "list"
+    property var customMap: ({})
+
+    function _getCustomW(key) {
+        if (customMap.hasOwnProperty(key)) return customMap[key].w || 1
+            var saved = ratioMap[key] || ""
+            if (saved && saved.indexOf("custom:") === 0) {
+                var parts = saved.substring(7).split(":")
+                return parseFloat(parts[0]) || 1
+            }
+            return 1
+    }
+
+    function _getCustomH(key) {
+        if (customMap.hasOwnProperty(key)) return customMap[key].h || 1
+            var saved = ratioMap[key] || ""
+            if (saved && saved.indexOf("custom:") === 0) {
+                var parts = saved.substring(7).split(":")
+                return parseFloat(parts[1]) || 1
+            }
+            return 1
+    }
+
+    function _setCustomValue(key, wVal, hVal) {
+        var copy = JSON.parse(JSON.stringify(customMap))
+        copy[key] = { w: wVal, h: hVal }
+        customMap = copy
+        var rCopy = JSON.parse(JSON.stringify(ratioMap))
+        rCopy[key] = "custom:" + wVal + ":" + hVal
+        ratioMap = rCopy
+        _saveToMemory()
+    }
 
     Component.onCompleted: { _loadFromMemory() }
 
@@ -121,6 +152,19 @@ FocusScope {
         } else {
             fillMap = {}
         }
+        var cMap = {}
+        for (var k in ratioMap) {
+            var val = ratioMap[k]
+            if (typeof val === "string" && val.indexOf("custom:") === 0) {
+                var parts = val.substring(7).split(":")
+                var w = parseFloat(parts[0])
+                var h = parseFloat(parts[1])
+                if (!isNaN(w) && !isNaN(h) && w > 0 && h > 0) {
+                    cMap[k] = { w: w, h: h }
+                }
+            }
+        }
+        customMap = cMap
     }
 
     function _saveToMemory() {
@@ -139,9 +183,23 @@ FocusScope {
     }
 
     function _setRatioFor(key, ratioKey) {
-        var copy = JSON.parse(JSON.stringify(ratioMap))
-        copy[key] = ratioKey
-        ratioMap = copy
+        if (ratioKey === "custom") {
+            var cW = _getCustomW(key)
+            var cH = _getCustomH(key)
+            if (!customMap.hasOwnProperty(key)) {
+                cW = 1; cH = 1
+                var cCopy = JSON.parse(JSON.stringify(customMap))
+                cCopy[key] = { w: cW, h: cH }
+                customMap = cCopy
+            }
+            var copy = JSON.parse(JSON.stringify(ratioMap))
+            copy[key] = "custom:" + cW + ":" + cH
+            ratioMap = copy
+        } else {
+            var copy2 = JSON.parse(JSON.stringify(ratioMap))
+            copy2[key] = ratioKey
+            ratioMap = copy2
+        }
         _saveToMemory()
     }
 
@@ -150,22 +208,6 @@ FocusScope {
         copy[key] = fillKey
         fillMap = copy
         _saveToMemory()
-    }
-
-    function _ratioIndexFor(key, isVirtual) {
-        var current = _getRatioFor(key, isVirtual)
-        for (var i = 0; i < ratioKeys.length; i++) {
-            if (ratioKeys[i] === current) return i
-        }
-        return 0
-    }
-
-    function _fillIndexFor(key) {
-        var current = _getFillFor(key)
-        for (var i = 0; i < fillKeys.length; i++) {
-            if (fillKeys[i] === current) return i
-        }
-        return 0
     }
 
     function _close() {
@@ -352,7 +394,13 @@ FocusScope {
                     if (api.keys.isAccept(event)) {
                         event.accepted = true
                         root.focusSection = "ratio"
-                        ratioFocusScope.forceActiveFocus()
+                        ratioMenuButton.forceActiveFocus()
+                        return
+                    }
+                    if (api.keys.isAccept(event) || event.key === Qt.Key_Right) {
+                        event.accepted = true
+                        root.focusSection = "ratio"
+                        ratioMenuButton.forceActiveFocus()
                         return
                     }
                 }
@@ -395,7 +443,9 @@ FocusScope {
                         }
                         text: {
                             var rk = entry ? root._getRatioFor(entry.key, entry.isVirtual) : ""
-                            return rk === "" ? "Auto" : rk
+                            if (rk === "") return "Auto"
+                                if (rk.indexOf("custom:") === 0) return rk.substring(7)
+                                    return rk
                         }
                         color: (isActive || isSelected) ? themeManager.color("textPrimary") : themeManager.color("textTertiary")
                         font { family: global.fonts.condensed; pixelSize: vpx(13); bold: true }
@@ -406,7 +456,7 @@ FocusScope {
                         onClicked: {
                             configListView.currentIndex = index
                             root.focusSection = "ratio"
-                            ratioFocusScope.forceActiveFocus()
+                            ratioMenuButton.forceActiveFocus()
                         }
                     }
                 }
@@ -466,342 +516,396 @@ FocusScope {
                 maximumLineCount: 2
             }
 
-            FocusScope {
-                id: ratioFocusScope
+            Rectangle {
+                id: ratioMenuButton
                 anchors {
-                    top: rightDesc.bottom; topMargin: vpx(20)
-                    left: parent.left; right: parent.right
+                    top: rightDesc.bottom
+                    topMargin: vpx(20)
+                    left: parent.left
+                    right: parent.horizontalCenter
+                    rightMargin: vpx(8)
                 }
-                height: vpx(80)
+                height: vpx(50)
+                radius: vpx(10)
+                color: activeFocus ? themeManager.color("surfaceHover") : themeManager.color("surface")
+                border {
+                    width: vpx(1)
+                    color: activeFocus ? themeManager.color("accent") : themeManager.color("border")
+                }
                 focus: root.focusSection === "ratio"
+                KeyNavigation.right: fillMenuButton
 
                 Keys.onPressed: {
-                    if (api.keys.isCancel(event)) {
+                    if (api.keys.isAccept(event) || event.key === Qt.Key_Return) {
+                        event.accepted = true
+                        ratioMenu.open()
+                        return
+                    }
+                    if (api.keys.isCancel(event) || event.key === Qt.Key_Left) {
                         event.accepted = true
                         root.focusSection = "list"
                         configListView.forceActiveFocus()
                         return
                     }
-                    if (event.key === Qt.Key_Down) {
-                        event.accepted = true
-                        root.focusSection = "fill"
-                        fillFocusScope.forceActiveFocus()
-                        return
-                    }
-                    if (event.key === Qt.Key_Left) {
-                        event.accepted = true
-                        var e1 = rightPane.currentEntry
-                        if (!e1) return
-                            var i1 = root._ratioIndexFor(e1.key, e1.isVirtual)
-                            root._setRatioFor(e1.key, root.ratioKeys[(i1 - 1 + root.ratioKeys.length) % root.ratioKeys.length])
-                            return
-                    }
-                    if (event.key === Qt.Key_Right) {
-                        event.accepted = true
-                        var e2 = rightPane.currentEntry
-                        if (!e2) return
-                            var i2 = root._ratioIndexFor(e2.key, e2.isVirtual)
-                            root._setRatioFor(e2.key, root.ratioKeys[(i2 + 1) % root.ratioKeys.length])
-                            return
-                    }
                 }
 
-                Text {
-                    id: ratioSectionLabel
-                    anchors { top: parent.top; left: parent.left }
-                    text: "Aspect Ratio"
-                    color: root.focusSection === "ratio" ? themeManager.color("textPrimary") : themeManager.color("textSecondary")
-                    font { family: global.fonts.sans; pixelSize: vpx(12); bold: root.focusSection === "ratio" }
-                    Behavior on color { ColorAnimation { duration: 120 } }
+                property string currentKey: {
+                    return rightPane.currentEntry
+                    ? root._getRatioFor(rightPane.currentEntry.key, rightPane.currentEntry.isVirtual)
+                    : ""
                 }
 
-                Rectangle {
-                    id: ratioSelector
+                Column {
                     anchors {
-                        top: ratioSectionLabel.bottom; topMargin: vpx(6)
-                        left: parent.left; right: parent.right
+                        left: parent.left
+                        leftMargin: vpx(16)
+                        verticalCenter: parent.verticalCenter
                     }
-                    height: vpx(54)
-                    radius: vpx(10)
-                    color: root.focusSection === "ratio" ? themeManager.color("surfaceHighlight") : themeManager.color("surface")
-                    border {
-                        width: vpx(1)
-                        color: root.focusSection === "ratio" ? themeManager.color("accent") : themeManager.color("border")
-                    }
-                    Behavior on color { ColorAnimation { duration: 140 } }
-                    Behavior on border.color { ColorAnimation { duration: 140 } }
+                    spacing: vpx(4)
 
-                    MouseArea {
-                        anchors.fill: parent
-                        z: -1
-                        onClicked: {
-                            root.focusSection = "ratio"
-                            ratioFocusScope.forceActiveFocus()
-                        }
-                    }
-
-                    property string currentKey: {
-                        return rightPane.currentEntry
-                        ? root._getRatioFor(rightPane.currentEntry.key, rightPane.currentEntry.isVirtual)
-                        : ""
-                    }
-
-                    Item {
-                        id: ratioBtnLeft
-                        anchors { left: parent.left; verticalCenter: parent.verticalCenter }
-                        width: vpx(48); height: vpx(48)
-
-                        Image {
-                            id: ratioLeftIcon
-                            anchors.centerIn: parent
-                            width: vpx(18); height: vpx(18)
-                            source: "assets/icon/left.svg"
-                            fillMode: Image.PreserveAspectFit
-                            mipmap: true
-                            visible: true
-                        }
-
-                        ColorOverlay {
-                            anchors.fill: ratioLeftIcon
-                            source: ratioLeftIcon
-                            color: root.focusSection === "ratio" ? themeManager.color("iconPrimary") : themeManager.color("iconDisabled")
-                            Behavior on color { NumberAnimation { duration: 120 } }
-                        }
-
-                        MouseArea {
-                            anchors.fill: parent
-                            onClicked: {
-                                root.focusSection = "ratio"
-                                ratioFocusScope.forceActiveFocus()
-                                var e = rightPane.currentEntry
-                                if (!e) return
-                                    var i = root._ratioIndexFor(e.key, e.isVirtual)
-                                    root._setRatioFor(e.key, root.ratioKeys[(i - 1 + root.ratioKeys.length) % root.ratioKeys.length])
-                            }
-                        }
+                    Text {
+                        text: "Aspect Ratio"
+                        color: themeManager.color("textSecondary")
+                        font { family: global.fonts.sans; pixelSize: vpx(12) }
                     }
 
                     Text {
-                        anchors.centerIn: parent
                         text: {
-                            var k = ratioSelector.currentKey
-                            return root.ratioLabels[k] !== undefined ? root.ratioLabels[k] : (k === "" ? "Auto" : k)
+                            var k = ratioMenuButton.currentKey
+                            if (k && k.indexOf("custom:") === 0) return root.ratioLabels["custom"] || "Custom"
+                                return root.ratioLabels[k] !== undefined ? root.ratioLabels[k] : (k === "" ? "Auto" : k)
                         }
-                        color: root.focusSection === "ratio" ? themeManager.color("textPrimary") : themeManager.color("textSecondary")
-                        font { family: global.fonts.sans; pixelSize: vpx(17); bold: root.focusSection === "ratio" }
-                        Behavior on color { ColorAnimation { duration: 120 } }
+                        color: themeManager.color("textPrimary")
+                        font { family: global.fonts.sans; pixelSize: vpx(20); bold: true }
                     }
+                }
 
-                    Item {
-                        id: ratioBtnRight
-                        anchors { right: parent.right; verticalCenter: parent.verticalCenter }
-                        width: vpx(48); height: vpx(48)
-
-                        Image {
-                            id: ratioRightIcon
-                            anchors.centerIn: parent
-                            width: vpx(18); height: vpx(18)
-                            source: "assets/icon/right.svg"
-                            fillMode: Image.PreserveAspectFit
-                            mipmap: true
-                            visible: true
-                        }
-
-                        ColorOverlay {
-                            anchors.fill: ratioRightIcon
-                            source: ratioRightIcon
-                            color: root.focusSection === "ratio" ? themeManager.color("iconPrimary") : themeManager.color("iconDisabled")
-                            Behavior on color { NumberAnimation { duration: 120 } }
-                        }
-
-                        MouseArea {
-                            anchors.fill: parent
-                            onClicked: {
-                                root.focusSection = "ratio"
-                                ratioFocusScope.forceActiveFocus()
-                                var e = rightPane.currentEntry
-                                if (!e) return
-                                    var i = root._ratioIndexFor(e.key, e.isVirtual)
-                                    root._setRatioFor(e.key, root.ratioKeys[(i + 1) % root.ratioKeys.length])
-                            }
-                        }
+                Image {
+                    anchors {
+                        right: parent.right
+                        rightMargin: vpx(16)
+                        verticalCenter: parent.verticalCenter
                     }
+                    source: "assets/icon/arrow-right.svg"
+                    width: vpx(16)
+                    height: vpx(16)
+                    fillMode: Image.PreserveAspectFit
+                    mipmap: true
+                    layer.enabled: true
+                    layer.effect: ColorOverlay {
+                        color: themeManager.color("iconPrimary")
+                    }
+                }
 
-                    Text {
-                        anchors { right: parent.right; rightMargin: vpx(50); verticalCenter: parent.verticalCenter }
-                        text: "↓ Fill Mode"
-                        color: root.focusSection === "ratio" ? themeManager.color("textSecondary") : "transparent"
-                        font { family: global.fonts.sans; pixelSize: vpx(11) }
-                        Behavior on color { ColorAnimation { duration: 120 } }
+                MouseArea {
+                    anchors.fill: parent
+                    onClicked: {
+                        ratioMenuButton.forceActiveFocus()
+                        root.focusSection = "ratio"
+                        ratioMenu.isOpen ? ratioMenu.close() : ratioMenu.open()
                     }
                 }
             }
 
-            FocusScope {
-                id: fillFocusScope
+            Rectangle {
+                id: fillMenuButton
                 anchors {
-                    top: ratioFocusScope.bottom; topMargin: vpx(14)
-                    left: parent.left; right: parent.right
+                    top: rightDesc.bottom
+                    topMargin: vpx(20)
+                    left: parent.horizontalCenter
+                    leftMargin: vpx(8)
+                    right: parent.right
                 }
-                height: vpx(80)
-                focus: root.focusSection === "fill"
+                height: vpx(50)
+                radius: vpx(10)
+                color: activeFocus ? themeManager.color("surfaceHover") : themeManager.color("surface")
+                border {
+                    width: vpx(1)
+                    color: activeFocus ? themeManager.color("accent") : themeManager.color("border")
+                }
+                KeyNavigation.left: ratioMenuButton
 
                 Keys.onPressed: {
+                    if (api.keys.isAccept(event) || event.key === Qt.Key_Return) {
+                        event.accepted = true
+                        fillMenu.open()
+                        return
+                    }
                     if (api.keys.isCancel(event)) {
                         event.accepted = true
                         root.focusSection = "list"
                         configListView.forceActiveFocus()
                         return
                     }
-                    if (event.key === Qt.Key_Up) {
-                        event.accepted = true
-                        root.focusSection = "ratio"
-                        ratioFocusScope.forceActiveFocus()
-                        return
-                    }
-                    if (event.key === Qt.Key_Left) {
-                        event.accepted = true
-                        var e1 = rightPane.currentEntry
-                        if (!e1) return
-                            var i1 = root._fillIndexFor(e1.key)
-                            root._setFillFor(e1.key, root.fillKeys[(i1 - 1 + root.fillKeys.length) % root.fillKeys.length])
-                            return
-                    }
-                    if (event.key === Qt.Key_Right) {
-                        event.accepted = true
-                        var e2 = rightPane.currentEntry
-                        if (!e2) return
-                            var i2 = root._fillIndexFor(e2.key)
-                            root._setFillFor(e2.key, root.fillKeys[(i2 + 1) % root.fillKeys.length])
-                            return
-                    }
                 }
 
-                Text {
-                    id: fillSectionLabel
-                    anchors { top: parent.top; left: parent.left }
-                    text: "Fill Mode"
-                    color: root.focusSection === "fill" ? themeManager.color("textPrimary") : themeManager.color("textSecondary")
-                    font { family: global.fonts.sans; pixelSize: vpx(12); bold: root.focusSection === "fill" }
-                    Behavior on color { ColorAnimation { duration: 120 } }
+                property string currentFill: {
+                    return rightPane.currentEntry ? root._getFillFor(rightPane.currentEntry.key) : "PreserveAspectFit"
                 }
 
-                Rectangle {
-                    id: fillSelector
+                Column {
                     anchors {
-                        top: fillSectionLabel.bottom; topMargin: vpx(6)
-                        left: parent.left; right: parent.right
+                        left: parent.left
+                        leftMargin: vpx(16)
+                        verticalCenter: parent.verticalCenter
                     }
-                    height: vpx(54)
-                    radius: vpx(10)
-                    color: root.focusSection === "fill" ? themeManager.color("surfaceHighlight") : themeManager.color("surface")
-                    border {
-                        width: vpx(1)
-                        color: root.focusSection === "fill" ? themeManager.color("accent") : themeManager.color("border")
-                    }
-                    Behavior on color { ColorAnimation { duration: 140 } }
-                    Behavior on border.color { ColorAnimation { duration: 140 } }
+                    spacing: vpx(4)
 
-                    MouseArea {
-                        anchors.fill: parent
-                        z: -1
-                        onClicked: {
-                            root.focusSection = "fill"
-                            fillFocusScope.forceActiveFocus()
-                        }
-                    }
-
-                    property string currentFill: {
-                        return rightPane.currentEntry ? root._getFillFor(rightPane.currentEntry.key) : "PreserveAspectFit"
-                    }
-
-                    Item {
-                        id: fillBtnLeft
-                        anchors { left: parent.left; verticalCenter: parent.verticalCenter }
-                        width: vpx(48); height: vpx(48)
-
-                        Image {
-                            id: fillLeftIcon
-                            anchors.centerIn: parent
-                            width: vpx(18); height: vpx(18)
-                            source: "assets/icon/left.svg"
-                            fillMode: Image.PreserveAspectFit
-                            mipmap: true
-                            visible: true
-                        }
-
-                        ColorOverlay {
-                            anchors.fill: fillLeftIcon
-                            source: fillLeftIcon
-                            color: root.focusSection === "fill" ? themeManager.color("iconPrimary") : themeManager.color("iconDisabled")
-                            Behavior on color { NumberAnimation { duration: 120 } }
-                        }
-
-                        MouseArea {
-                            anchors.fill: parent
-                            onClicked: {
-                                root.focusSection = "fill"
-                                fillFocusScope.forceActiveFocus()
-                                var e = rightPane.currentEntry
-                                if (!e) return
-                                    var i = root._fillIndexFor(e.key)
-                                    root._setFillFor(e.key, root.fillKeys[(i - 1 + root.fillKeys.length) % root.fillKeys.length])
-                            }
-                        }
+                    Text {
+                        text: "Fill Mode"
+                        color: themeManager.color("textSecondary")
+                        font { family: global.fonts.sans; pixelSize: vpx(12) }
                     }
 
                     Text {
-                        anchors.centerIn: parent
-                        text: {
-                            var k = fillSelector.currentFill
-                            return root.fillLabels[k] !== undefined ? root.fillLabels[k] : k
+                        text: root.fillLabels[fillMenuButton.currentFill] !== undefined ? root.fillLabels[fillMenuButton.currentFill] : fillMenuButton.currentFill
+                        color: themeManager.color("textPrimary")
+                        font { family: global.fonts.sans; pixelSize: vpx(20); bold: true }
+                    }
+                }
+
+                Image {
+                    anchors {
+                        right: parent.right
+                        rightMargin: vpx(16)
+                        verticalCenter: parent.verticalCenter
+                    }
+                    source: "assets/icon/arrow-right.svg"
+                    width: vpx(16)
+                    height: vpx(16)
+                    fillMode: Image.PreserveAspectFit
+                    mipmap: true
+                    layer.enabled: true
+                    layer.effect: ColorOverlay {
+                        color: themeManager.color("iconPrimary")
+                    }
+                }
+
+                MouseArea {
+                    anchors.fill: parent
+                    onClicked: {
+                        fillMenuButton.forceActiveFocus()
+                        root.focusSection = "fill"
+                        fillMenu.isOpen ? fillMenu.close() : fillMenu.open()
+                    }
+                }
+            }
+
+            Item {
+                id: customPanel
+                anchors {
+                    top: ratioMenuButton.bottom
+                    topMargin: vpx(5)
+                    left: parent.left
+                    right: parent.right
+                }
+                height: vpx(110)
+                visible: {
+                    var entry = rightPane.currentEntry
+                    if (!entry) return false
+                        var rk = root._getRatioFor(entry.key, entry.isVirtual)
+                        return rk === "custom" || (rk && rk.indexOf("custom:") === 0)
+                }
+
+                Item {
+                    id: widthInputBox
+                    anchors {
+                        left: parent.left
+                        right: parent.horizontalCenter
+                        rightMargin: vpx(6)
+                        verticalCenter: parent.verticalCenter
+                    }
+                    height: vpx(90)
+
+                    Text {
+                        id: widthLabel
+                        anchors {
+                            top: parent.top
+                            horizontalCenter: parent.horizontalCenter
                         }
-                        color: root.focusSection === "fill" ? themeManager.color("textPrimary") : themeManager.color("textSecondary")
-                        font { family: global.fonts.sans; pixelSize: vpx(17); bold: root.focusSection === "fill" }
-                        Behavior on color { ColorAnimation { duration: 120 } }
+                        text: "Width"
+                        color: themeManager.color("textTertiary")
+                        font { family: global.fonts.sans; pixelSize: vpx(16) }
                     }
 
-                    Item {
-                        id: fillBtnRight
-                        anchors { right: parent.right; verticalCenter: parent.verticalCenter }
-                        width: vpx(48); height: vpx(48)
+                    Rectangle {
+                        anchors {
+                            top: widthLabel.bottom
+                            topMargin: vpx(4)
+                            left: parent.left
+                            right: parent.right
+                            bottom: parent.bottom
+                        }
+                        radius: vpx(10)
+                        color: themeManager.color("surface")
+                        border { width: vpx(2); color: themeManager.color("border") }
 
-                        Image {
-                            id: fillRightIcon
+                        Rectangle {
+                            id: widthMinusBtn
+                            anchors {
+                                left: parent.left
+                                top: parent.top
+                                bottom: parent.bottom
+                            }
+                            width: parent.width * 0.28
+                            radius: vpx(8)
+                            color: themeManager.color("surfaceHover")
+                            Text {
+                                anchors.centerIn: parent
+                                text: "−"
+                                color: themeManager.color("textSecondary")
+                                font { family: global.fonts.condensed; pixelSize: vpx(22); bold: true }
+                            }
+                            MouseArea {
+                                anchors.fill: parent
+                                onClicked: {
+                                    var e = rightPane.currentEntry
+                                    if (!e) return
+                                    var w = Math.max(1, root._getCustomW(e.key) - 1)
+                                    root._setCustomValue(e.key, w, root._getCustomH(e.key))
+                                }
+                            }
+                        }
+
+                        Text {
+                            id: widthValueText
                             anchors.centerIn: parent
-                            width: vpx(18); height: vpx(18)
-                            source: "assets/icon/right.svg"
-                            fillMode: Image.PreserveAspectFit
-                            mipmap: true
-                            visible: true
-                        }
-
-                        ColorOverlay {
-                            anchors.fill: fillRightIcon
-                            source: fillRightIcon
-                            color: root.focusSection === "fill" ? themeManager.color("iconPrimary") : themeManager.color("iconDisabled")
-                            Behavior on color { NumberAnimation { duration: 120 } }
-                        }
-
-                        MouseArea {
-                            anchors.fill: parent
-                            onClicked: {
-                                root.focusSection = "fill"
-                                fillFocusScope.forceActiveFocus()
+                            text: {
                                 var e = rightPane.currentEntry
-                                if (!e) return
-                                    var i = root._fillIndexFor(e.key)
-                                    root._setFillFor(e.key, root.fillKeys[(i + 1) % root.fillKeys.length])
+                                if (!e) return "1"
+                                return "" + root._getCustomW(e.key)
+                            }
+                            color: themeManager.color("textPrimary")
+                            font { family: global.fonts.condensed; pixelSize: vpx(28); bold: true }
+                        }
+
+                        Rectangle {
+                            id: widthPlusBtn
+                            anchors {
+                                right: parent.right
+                                top: parent.top
+                                bottom: parent.bottom
+                            }
+                            width: parent.width * 0.28
+                            radius: vpx(8)
+                            color: themeManager.color("surfaceHover")
+                            Text {
+                                anchors.centerIn: parent
+                                text: "+"
+                                color: themeManager.color("textSecondary")
+                                font { family: global.fonts.condensed; pixelSize: vpx(22); bold: true }
+                            }
+                            MouseArea {
+                                anchors.fill: parent
+                                onClicked: {
+                                    var e = rightPane.currentEntry
+                                    if (!e) return
+                                    var w = Math.min(99, root._getCustomW(e.key) + 1)
+                                    root._setCustomValue(e.key, w, root._getCustomH(e.key))
+                                }
                             }
                         }
                     }
+                }
+
+                Item {
+                    id: heightInputBox
+                    anchors {
+                        left: parent.horizontalCenter
+                        leftMargin: vpx(6)
+                        right: parent.right
+                        verticalCenter: parent.verticalCenter
+                    }
+                    height: vpx(90)
 
                     Text {
-                        anchors { right: parent.right; rightMargin: vpx(50); verticalCenter: parent.verticalCenter }
-                        text: "↑ Aspect Ratio"
-                        color: root.focusSection === "fill" ? themeManager.color("textSecondary") : "transparent"
-                        font { family: global.fonts.sans; pixelSize: vpx(11) }
-                        Behavior on color { ColorAnimation { duration: 120 } }
+                        id: heightLabel
+                        anchors {
+                            top: parent.top
+                            horizontalCenter: parent.horizontalCenter
+                        }
+                        text: "Height"
+                        color: themeManager.color("textTertiary")
+                        font { family: global.fonts.sans; pixelSize: vpx(16) }
+                    }
+
+                    Rectangle {
+                        anchors {
+                            top: heightLabel.bottom
+                            topMargin: vpx(4)
+                            left: parent.left
+                            right: parent.right
+                            bottom: parent.bottom
+                        }
+                        radius: vpx(10)
+                        color: themeManager.color("surface")
+                        border { width: vpx(2); color: themeManager.color("border") }
+
+                        Rectangle {
+                            id: heightMinusBtn
+                            anchors {
+                                left: parent.left
+                                top: parent.top
+                                bottom: parent.bottom
+                            }
+                            width: parent.width * 0.28
+                            radius: vpx(8)
+                            color: themeManager.color("surfaceHover")
+                            Text {
+                                anchors.centerIn: parent
+                                text: "−"
+                                color: themeManager.color("textSecondary")
+                                font { family: global.fonts.condensed; pixelSize: vpx(22); bold: true }
+                            }
+                            MouseArea {
+                                anchors.fill: parent
+                                onClicked: {
+                                    var e = rightPane.currentEntry
+                                    if (!e) return
+                                    var h = Math.max(1, root._getCustomH(e.key) - 1)
+                                    root._setCustomValue(e.key, root._getCustomW(e.key), h)
+                                }
+                            }
+                        }
+
+                        Text {
+                            id: heightValueText
+                            anchors.centerIn: parent
+                            text: {
+                                var e = rightPane.currentEntry
+                                if (!e) return "1"
+                                return "" + root._getCustomH(e.key)
+                            }
+                            color: themeManager.color("textPrimary")
+                            font { family: global.fonts.condensed; pixelSize: vpx(28); bold: true }
+                        }
+
+                        Rectangle {
+                            id: heightPlusBtn
+                            anchors {
+                                right: parent.right
+                                top: parent.top
+                                bottom: parent.bottom
+                            }
+                            width: parent.width * 0.28
+                            radius: vpx(8)
+                            color: themeManager.color("surfaceHover")
+                            Text {
+                                anchors.centerIn: parent
+                                text: "+"
+                                color: themeManager.color("textSecondary")
+                                font { family: global.fonts.condensed; pixelSize: vpx(22); bold: true }
+                            }
+                            MouseArea {
+                                anchors.fill: parent
+                                onClicked: {
+                                    var e = rightPane.currentEntry
+                                    if (!e) return
+                                    var h = Math.min(99, root._getCustomH(e.key) + 1)
+                                    root._setCustomValue(e.key, root._getCustomW(e.key), h)
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -809,9 +913,12 @@ FocusScope {
             Item {
                 id: previewArea
                 anchors {
-                    top: fillFocusScope.bottom; topMargin: vpx(20)
-                    left: parent.left; right: parent.right
-                    bottom: parent.bottom; bottomMargin: vpx(8)
+                    top: customPanel.bottom
+                    topMargin: customPanel.visible ? vpx(20) : vpx(10)
+                    left: parent.left
+                    right: parent.right
+                    bottom: parent.bottom
+                    bottomMargin: vpx(8)
                 }
 
                 Text {
@@ -819,81 +926,552 @@ FocusScope {
                     anchors { top: parent.top; horizontalCenter: parent.horizontalCenter }
                     text: "Preview"
                     color: themeManager.color("textTertiary")
-                    font { family: global.fonts.sans; pixelSize: vpx(12) }
+                    font { family: global.fonts.sans; pixelSize: vpx(16) }
                 }
 
                 Item {
                     id: previewFrame
                     anchors {
-                        top: previewLabel.bottom; topMargin: vpx(10)
-                        bottom: parent.bottom; horizontalCenter: parent.horizontalCenter
+                        top: previewLabel.bottom
+                        topMargin: vpx(10)
+                        bottom: parent.bottom
+                        horizontalCenter: parent.horizontalCenter
                     }
-                    width: parent.width * 0.55
+                    width: parent.width * 0.65
 
-                    property string rKey: {
+                    property string _rawKey: {
                         return rightPane.currentEntry
                         ? root._getRatioFor(rightPane.currentEntry.key, rightPane.currentEntry.isVirtual)
                         : ""
                     }
+                    property string rKey: {
+                        if (_rawKey && _rawKey.indexOf("custom:") === 0)
+                            return _rawKey.substring(7)
+                            return _rawKey
+                    }
+                    property bool isCustomMode: _rawKey === "custom" || (_rawKey && _rawKey.indexOf("custom:") === 0)
+
                     property string fKey: {
                         return rightPane.currentEntry ? root._getFillFor(rightPane.currentEntry.key) : "PreserveAspectFit"
                     }
                     property real previewW: {
-                        if (rKey === "" || rKey === "custom") return width * 0.7
-                            var parts = rKey.split(":")
-                            if (parts.length !== 2) return width * 0.7
-                                var wR = parseFloat(parts[0]); var hR = parseFloat(parts[1])
-                                if (hR <= 0) return width * 0.7
-                                    var maxW = width * 0.85; var maxH = height * 0.85
-                                    var fromW = maxW; var fromH = maxW * (hR / wR)
-                                    if (fromH > maxH) { fromH = maxH; fromW = maxH * (wR / hR) }
-                                    return fromW
+                        var key = rKey
+                        var maxW = width * 0.85
+                        var maxH = height * 0.85
+                        if (key === "" || key === "custom") {
+                            var wAuto = maxW * 0.63 / 0.85
+                            var hAuto = wAuto * 1.3
+                            if (hAuto > maxH) { hAuto = maxH; wAuto = hAuto / 1.3 }
+                            return wAuto
+                        }
+                        var parts = key.split(":")
+                        if (parts.length !== 2) return Math.min(maxW * 0.74, maxH / 1.3)
+                            var wR = parseFloat(parts[0]); var hR = parseFloat(parts[1])
+                            if (hR <= 0 || isNaN(wR) || isNaN(hR)) return Math.min(maxW * 0.74, maxH / 1.3)
+                                var fromW = maxW; var fromH = maxW * (hR / wR)
+                                if (fromH > maxH) { fromH = maxH; fromW = maxH * (wR / hR) }
+                                return fromW
                     }
                     property real previewH: {
-                        if (rKey === "" || rKey === "custom") return previewW * 1.3
-                            var parts = rKey.split(":")
-                            if (parts.length !== 2) return previewW * 1.3
-                                var wR = parseFloat(parts[0]); var hR = parseFloat(parts[1])
-                                if (wR <= 0) return previewW * 1.3
-                                    return previewW * (hR / wR)
+                        var key = rKey
+                        var maxH = height * 0.85
+                        if (key === "" || key === "custom") {
+                            var h = previewW * 1.3
+                            return Math.min(h, maxH)
+                        }
+                        var parts = key.split(":")
+                        if (parts.length !== 2) return Math.min(previewW * 1.3, maxH)
+                            var wR = parseFloat(parts[0]); var hR = parseFloat(parts[1])
+                            if (wR <= 0 || isNaN(wR) || isNaN(hR)) return Math.min(previewW * 1.3, maxH)
+                                return Math.min(previewW * (hR / wR), maxH)
                     }
 
                     Rectangle {
+                        id: previewRect
                         anchors.centerIn: parent
-                        width: previewFrame.previewW; height: previewFrame.previewH
-                        radius: vpx(8)
+                        width: previewFrame.previewW
+                        height: previewFrame.previewH
+                        radius: width * 0.04
                         color: themeManager.color("surfaceElevated")
-                        border { width: vpx(2); color: themeManager.color("accent") }
+                        border {
+                            width: Math.max(1, width * 0.012)
+                            color: themeManager.color("accent")
+                        }
                         Behavior on width { NumberAnimation { duration: 200; easing.type: Easing.OutQuad } }
                         Behavior on height { NumberAnimation { duration: 200; easing.type: Easing.OutQuad } }
 
                         Text {
-                            anchors { horizontalCenter: parent.horizontalCenter; top: parent.top; topMargin: vpx(10) }
-                            text: previewFrame.rKey === "" ? "AUTO" : previewFrame.rKey.toUpperCase()
+                            anchors {
+                                horizontalCenter: parent.horizontalCenter
+                                top: parent.top
+                                topMargin: parent.height * 0.08
+                            }
+                            text: {
+                                var rk = previewFrame._rawKey
+                                if (rk === "") return "AUTO"
+                                    if (rk && rk.indexOf("custom:") === 0) return rk.substring(7)
+                                        return rk.toUpperCase()
+                            }
                             color: themeManager.color("textPrimary")
                             opacity: 0.6
-                            font { family: global.fonts.condensed; pixelSize: vpx(18); bold: true }
+                            font {
+                                family: global.fonts.condensed
+                                pixelSize: previewRect.width * 0.14
+                                bold: true
+                            }
                         }
 
                         Rectangle {
-                            anchors { bottom: parent.bottom; left: parent.left; right: parent.right }
-                            height: parent.height * 0.28
-                            radius: vpx(6)
-                            color: themeManager.color("surfaceHighlight")
-                            Rectangle {
-                                anchors { top: parent.top; left: parent.left; right: parent.right }
-                                height: vpx(1)
-                                color: themeManager.color("border")
+                            anchors {
+                                bottom: parent.bottom
+                                horizontalCenter: parent.horizontalCenter
+                                bottomMargin: vpx(5)
                             }
+                            width: parent.width * 0.95
+                            height: parent.height * 0.18
+                            radius: vpx(5)
+                            color: themeManager.color("surfaceHighlight")
+
                             Text {
                                 anchors.centerIn: parent
                                 text: root.fillLabels[previewFrame.fKey] || previewFrame.fKey
                                 color: themeManager.color("textSecondary")
-                                font { family: global.fonts.condensed; pixelSize: vpx(10); bold: true }
+                                font {
+                                    family: global.fonts.condensed
+                                    pixelSize: previewRect.width * 0.09
+                                    bold: true
+                                }
                             }
                         }
                     }
                 }
+            }
+        }
+    }
+
+    Item {
+        id: ratioMenu
+        anchors.fill: parent
+        visible: false
+        z: 200
+
+        property bool isOpen: false
+        property var anchorItem: ratioMenuButton
+
+        function open() {
+            if (isOpen) return
+                isOpen = true
+                visible = true
+                ratioMenuList.currentIndex = _getCurrentRatioIndex()
+                Qt.callLater(function() {
+                    ratioMenuList.forceActiveFocus()
+                    ratioMenuList.positionViewAtIndex(ratioMenuList.currentIndex, ListView.Center)
+                })
+        }
+
+        function close() {
+            if (!isOpen) return
+                isOpen = false
+                visible = false
+                root.focusSection = "ratio"
+                ratioMenuButton.forceActiveFocus()
+        }
+
+        function toggle() {
+            if (isOpen) close()
+                else open()
+        }
+
+        function _getCurrentRatioIndex() {
+            var entry = rightPane.currentEntry
+            if (!entry) return 0
+                var current = root._getRatioFor(entry.key, entry.isVirtual)
+                if (current && current.indexOf("custom:") === 0) {
+                    for (var j = 0; j < root.ratioKeys.length; j++) {
+                        if (root.ratioKeys[j] === "custom") return j
+                    }
+                }
+                for (var i = 0; i < root.ratioKeys.length; i++) {
+                    if (root.ratioKeys[i] === current) return i
+                }
+                return 0
+        }
+
+        Rectangle {
+            id: ratioMenuContainer
+
+            property point _mapped: ratioMenu.anchorItem && ratioMenu.isOpen
+            ? ratioMenu.anchorItem.mapToItem(root, 0, 0)
+            : Qt.point(root.width / 2, root.height / 2)
+
+            property real _anchorBottomY: _mapped.y + (ratioMenu.anchorItem ? ratioMenu.anchorItem.height : 0)
+            property real _anchorTopY: _mapped.y
+
+            x: {
+                var rawX = _mapped.x
+                var adjustedX = rawX
+                if (adjustedX + width > root.width - vpx(8))
+                    adjustedX = root.width - width - vpx(8)
+                    if (adjustedX < vpx(8))
+                        adjustedX = vpx(8)
+                        return adjustedX
+            }
+
+            y: {
+                var targetY = _anchorBottomY + vpx(4)
+                if (targetY + height > root.height - vpx(8)) {
+                    targetY = _anchorTopY - height - vpx(4)
+                }
+                return Math.max(vpx(8), Math.min(targetY, root.height - height - vpx(1)))
+            }
+
+            width: vpx(220)
+            height: vpx(250)
+            radius: vpx(5)
+            clip: true
+            color: themeManager.color("surfaceElevated")
+            border { width: vpx(2); color: themeManager.color("borderLight") }
+
+            layer.enabled: true
+            layer.effect: DropShadow {
+                horizontalOffset: 0
+                verticalOffset: vpx(4)
+                radius: vpx(16)
+                samples: 32
+                color: "#40000000"
+                source: ratioMenuContainer
+            }
+
+            opacity: ratioMenu.isOpen ? 1.0 : 0.0
+            Behavior on opacity { NumberAnimation { duration: 150 } }
+
+            ListView {
+                    id: ratioMenuList
+                    anchors.fill: parent
+                    anchors.margins: vpx(2)
+                    clip: true
+                    focus: ratioMenu.isOpen
+                    keyNavigationWraps: true
+                    spacing: vpx(2)
+                    boundsBehavior: Flickable.StopAtBounds
+
+                    model: root.ratioKeys
+
+                    delegate: Rectangle {
+                        width: ratioMenuList.width
+                        height: vpx(60)
+                        radius: vpx(5)
+
+                        property bool isCurrent: ListView.isCurrentItem
+
+                        color: isCurrent ? themeManager.color("surfaceHover") : themeManager.color("surfaceElevated")
+                        Behavior on color { ColorAnimation { duration: 120 } }
+
+                        Rectangle {
+                            anchors {
+                                left: parent.left
+                                verticalCenter: parent.verticalCenter
+                            }
+                            width: isCurrent ? vpx(3) : 0
+                            height: vpx(20)
+                            radius: vpx(6)
+                            color: themeManager.color("accent")
+                            Behavior on width { NumberAnimation { duration: 160 } }
+                        }
+
+                        Column {
+                            anchors {
+                                left: parent.left
+                                leftMargin: vpx(12)
+                                right: parent.right
+                                rightMargin: vpx(28)
+                                verticalCenter: parent.verticalCenter
+                            }
+                            spacing: vpx(2)
+
+                            Text {
+                                text: root.ratioLabels[modelData] !== undefined ? root.ratioLabels[modelData] : (modelData === "" ? "Auto" : modelData)
+                                color: isCurrent ? themeManager.color("textPrimary") : themeManager.color("textSecondary")
+                                font {
+                                    family: global.fonts.sans
+                                    pixelSize: vpx(18)
+                                    weight: isCurrent ? Font.DemiBold : Font.Normal
+                                }
+                                elide: Text.ElideRight
+                            }
+
+                            Text {
+                                text: {
+                                    if (modelData === "") return "Auto"
+                                        if (modelData === "custom") return "Custom"
+                                            if (modelData === "1:1") return "Square"
+                                                if (modelData === "4:3") return "Classic"
+                                                    if (modelData === "3:4") return "Portrait"
+                                                        if (modelData === "8:7") return "NDS"
+                                                            if (modelData === "3:5") return "PSP"
+                                                                if (modelData === "2:3") return "Box"
+                                                                    return ""
+                                }
+                                color: themeManager.color("textTertiary")
+                                font { family: global.fonts.sans; pixelSize: vpx(16) }
+                                elide: Text.ElideRight
+                            }
+                        }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            onEntered: ratioMenuList.currentIndex = index
+                            onClicked: {
+                                var entry = rightPane.currentEntry
+                                if (entry) {
+                                    root._setRatioFor(entry.key, modelData)
+                                    ratioMenu.close()
+                                }
+                            }
+                        }
+                    }
+
+                    Keys.onUpPressed: {
+                        if (currentIndex > 0) {
+                            decrementCurrentIndex()
+                            positionViewAtIndex(currentIndex, ListView.Contain)
+                        }
+                        event.accepted = true
+                    }
+
+                    Keys.onDownPressed: {
+                        if (currentIndex < root.ratioKeys.length - 1) {
+                            incrementCurrentIndex()
+                            positionViewAtIndex(currentIndex, ListView.Contain)
+                        }
+                        event.accepted = true
+                    }
+
+                    Keys.onPressed: {
+                        if (api.keys.isAccept(event)) {
+                            event.accepted = true
+                            var entry = rightPane.currentEntry
+                            if (entry) {
+                                root._setRatioFor(entry.key, root.ratioKeys[currentIndex])
+                                ratioMenu.close()
+                            }
+                            return
+                        }
+                        if (api.keys.isCancel(event)) {
+                            event.accepted = true
+                            ratioMenu.close()
+                            return
+                        }
+                    }
+            }
+        }
+    }
+
+    Item {
+        id: fillMenu
+        anchors.fill: parent
+        visible: false
+        z: 200
+
+        property bool isOpen: false
+        property var anchorItem: fillMenuButton
+
+        function open() {
+            if (isOpen) return
+                isOpen = true
+                visible = true
+                fillMenuList.currentIndex = _getCurrentFillIndex()
+                Qt.callLater(function() {
+                    fillMenuList.forceActiveFocus()
+                    fillMenuList.positionViewAtIndex(fillMenuList.currentIndex, ListView.Center)
+                })
+        }
+
+        function close() {
+            if (!isOpen) return
+                isOpen = false
+                visible = false
+                root.focusSection = "ratio"
+                fillMenuButton.forceActiveFocus()
+        }
+
+        function toggle() {
+            if (isOpen) close()
+                else open()
+        }
+
+        function _getCurrentFillIndex() {
+            var entry = rightPane.currentEntry
+            if (!entry) return 0
+                var current = root._getFillFor(entry.key)
+                for (var i = 0; i < root.fillKeys.length; i++) {
+                    if (root.fillKeys[i] === current) return i
+                }
+                return 0
+        }
+
+        Rectangle {
+            id: fillMenuContainer
+
+            property point _mapped: fillMenu.anchorItem && fillMenu.isOpen
+            ? fillMenu.anchorItem.mapToItem(root, 0, 0)
+            : Qt.point(root.width / 2, root.height / 2)
+
+            property real _anchorBottomY: _mapped.y + (fillMenu.anchorItem ? fillMenu.anchorItem.height : 0)
+            property real _anchorTopY: _mapped.y
+
+            x: {
+                var rawX = _mapped.x
+                var adjustedX = rawX
+                if (adjustedX + width > root.width - vpx(8))
+                    adjustedX = root.width - width - vpx(8)
+                    if (adjustedX < vpx(8))
+                        adjustedX = vpx(8)
+                        return adjustedX
+            }
+
+            y: {
+                var targetY = _anchorBottomY + vpx(4)
+                if (targetY + height > root.height - vpx(8)) {
+                    targetY = _anchorTopY - height - vpx(4)
+                }
+                return Math.max(vpx(8), Math.min(targetY, root.height - height - vpx(1)))
+            }
+
+            width: vpx(210)
+            height: vpx(205)
+            radius: vpx(5)
+            color: themeManager.color("surfaceElevated")
+            border { width: vpx(2); color: themeManager.color("borderLight") }
+
+            layer.enabled: true
+            layer.effect: DropShadow {
+                horizontalOffset: 0
+                verticalOffset: vpx(4)
+                radius: vpx(16)
+                samples: 32
+                color: "#40000000"
+                source: fillMenuContainer
+            }
+
+            opacity: fillMenu.isOpen ? 1.0 : 0.0
+            Behavior on opacity { NumberAnimation { duration: 150 } }
+
+            ListView {
+                    id: fillMenuList
+                    anchors.fill: parent
+                    anchors.margins: vpx(2)
+                    clip: true
+                    focus: fillMenu.isOpen
+                    keyNavigationWraps: true
+                    spacing: vpx(2)
+                    boundsBehavior: Flickable.StopAtBounds
+
+                    model: root.fillKeys
+
+                    delegate: Rectangle {
+                        width: fillMenuList.width
+                        height: vpx(60)
+                        radius: vpx(6)
+
+                        property bool isCurrent: ListView.isCurrentItem
+
+                        color: isCurrent ? themeManager.color("surfaceHover") : themeManager.color("surfaceElevated")
+                        Behavior on color { ColorAnimation { duration: 120 } }
+
+                        Rectangle {
+                            anchors {
+                                left: parent.left
+                                verticalCenter: parent.verticalCenter
+                            }
+                            width: isCurrent ? vpx(3) : 0
+                            height: vpx(20)
+                            radius: vpx(2)
+                            color: themeManager.color("accent")
+                            Behavior on width { NumberAnimation { duration: 160 } }
+                        }
+
+                        Column {
+                            anchors {
+                                left: parent.left
+                                leftMargin: vpx(12)
+                                right: parent.right
+                                rightMargin: vpx(28)
+                                verticalCenter: parent.verticalCenter
+                            }
+                            spacing: vpx(2)
+
+                            Text {
+                                text: root.fillLabels[modelData] !== undefined ? root.fillLabels[modelData] : modelData
+                                color: isCurrent ? themeManager.color("textPrimary") : themeManager.color("textSecondary")
+                                font {
+                                    family: global.fonts.sans
+                                    pixelSize: vpx(18)
+                                    weight: isCurrent ? Font.DemiBold : Font.Normal
+                                }
+                                elide: Text.ElideRight
+                            }
+
+                            Text {
+                                text: {
+                                    if (modelData === "PreserveAspectFit") return "Fit"
+                                        if (modelData === "Stretch") return "Stretch"
+                                            if (modelData === "PreserveAspectCrop") return "Crop"
+                                                return ""
+                                }
+                                color: themeManager.color("textTertiary")
+                                font { family: global.fonts.sans; pixelSize: vpx(16) }
+                                elide: Text.ElideRight
+                            }
+                        }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            onEntered: fillMenuList.currentIndex = index
+                            onClicked: {
+                                var entry = rightPane.currentEntry
+                                if (entry) {
+                                    root._setFillFor(entry.key, modelData)
+                                    fillMenu.close()
+                                }
+                            }
+                        }
+                    }
+
+                    Keys.onUpPressed: {
+                        if (currentIndex > 0) {
+                            decrementCurrentIndex()
+                            positionViewAtIndex(currentIndex, ListView.Contain)
+                        }
+                        event.accepted = true
+                    }
+
+                    Keys.onDownPressed: {
+                        if (currentIndex < root.fillKeys.length - 1) {
+                            incrementCurrentIndex()
+                            positionViewAtIndex(currentIndex, ListView.Contain)
+                        }
+                        event.accepted = true
+                    }
+
+                    Keys.onPressed: {
+                        if (api.keys.isAccept(event)) {
+                            event.accepted = true
+                            var entry = rightPane.currentEntry
+                            if (entry) {
+                                root._setFillFor(entry.key, root.fillKeys[currentIndex])
+                                fillMenu.close()
+                            }
+                            return
+                        }
+                        if (api.keys.isCancel(event)) {
+                            event.accepted = true
+                            fillMenu.close()
+                            return
+                        }
+                    }
             }
         }
     }

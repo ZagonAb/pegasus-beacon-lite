@@ -132,11 +132,11 @@ FocusScope {
         interval: 1500
         repeat: false
         onTriggered: {
-            console.log("[theme] clearStateTimer fired — unsetting collectionIndex, gameIndex, gameTitle")
+            //console.log("[theme] clearStateTimer fired — unsetting collectionIndex, gameIndex, gameTitle")
             api.memory.unset("collectionIndex")
             api.memory.unset("gameIndex")
             api.memory.unset("gameTitle")
-            console.log("[theme] after unset — collectionIndex:", api.memory.get("collectionIndex"), "gameIndex:", api.memory.get("gameIndex"), "gameTitle:", api.memory.get("gameTitle"))
+            //console.log("[theme] after unset — collectionIndex:", api.memory.get("collectionIndex"), "gameIndex:", api.memory.get("gameIndex"), "gameTitle:", api.memory.get("gameTitle"))
         }
     }
 
@@ -159,24 +159,24 @@ FocusScope {
         var savedGame = api.memory.get("gameIndex")
         var savedTitle = api.memory.get("gameTitle")
         var savedMode = api.memory.get("viewMode")
-        console.log("[theme] onCompleted — savedCol:", savedCol, "savedGame:", savedGame, "savedTitle:", savedTitle, "savedMode:", savedMode)
+        //console.log("[theme] onCompleted — savedCol:", savedCol, "savedGame:", savedGame, "savedTitle:", savedTitle, "savedMode:", savedMode)
         if (savedCol !== undefined && fullCollectionList.length > 0)
             currentCollectionIndex = Math.max(0, Math.min(savedCol, fullCollectionList.length - 1))
         if (savedMode !== undefined) viewMode = savedMode
         if (savedTitle !== undefined && savedTitle !== "") {
             Qt.callLater(function() {
                 var idx = _findGameIndexByTitle(savedTitle)
-                console.log("[theme] restore by title:", savedTitle, "-> index:", idx)
+                //console.log("[theme] restore by title:", savedTitle, "-> index:", idx)
                 currentGameIndex = (idx >= 0) ? idx : 0
             })
         } else if (savedGame !== undefined) {
             currentGameIndex = savedGame
         }
         if (savedCol !== undefined || savedGame !== undefined || savedTitle !== undefined) {
-            console.log("[theme] came from game — starting clearStateTimer")
+            //console.log("[theme] came from game — starting clearStateTimer")
             clearStateTimer.start()
         } else {
-            console.log("[theme] normal startup — no saved indices to clear")
+            //console.log("[theme] normal startup — no saved indices to clear")
         }
         root.forceActiveFocus()
     }
@@ -191,12 +191,12 @@ FocusScope {
             if (g && g.title) {
                 api.memory.set("gameTitle", g.title)
                 api.memory.unset("gameIndex")
-                console.log("[theme] persistState virtual — title:", g.title)
+                //console.log("[theme] persistState virtual — title:", g.title)
             }
         } else {
             api.memory.set("gameIndex", currentGameIndex)
             api.memory.unset("gameTitle")
-            console.log("[theme] persistState normal — index:", currentGameIndex)
+            //console.log("[theme] persistState normal — index:", currentGameIndex)
         }
     }
 
@@ -908,7 +908,7 @@ FocusScope {
                     Text {
                         text: "Release date"
                         color: themeManager.color("textSecondary")
-                        font { family: global.fonts.sans; pixelSize: vpx(15) }
+                        font { family: global.fonts.sans; pixelSize: vpx(18) }
                     }
                     Text {
                         text: {
@@ -918,7 +918,7 @@ FocusScope {
                             return listMetaRow.selGame.releaseYear.toString()
                         }
                         color: themeManager.color("textPrimary")
-                        font { family: global.fonts.sans; pixelSize: vpx(18); bold: true }
+                        font { family: global.fonts.sans; pixelSize: vpx(22); bold: true }
                     }
                 }
 
@@ -928,12 +928,12 @@ FocusScope {
                     Text {
                         text: "Genre"
                         color: themeManager.color("textSecondary")
-                        font { family: global.fonts.sans; pixelSize: vpx(15) }
+                        font { family: global.fonts.sans; pixelSize: vpx(18) }
                     }
                     Text {
                         text: listMetaRow.selGame ? listMetaRow.selGame.genre : ""
                         color: themeManager.color("textPrimary")
-                        font { family: global.fonts.sans; pixelSize: vpx(18); bold: true }
+                        font { family: global.fonts.sans; pixelSize: vpx(22); bold: true }
                         elide: Text.ElideRight
                         width: vpx(280)
                     }
@@ -945,12 +945,12 @@ FocusScope {
                     Text {
                         text: "Developer"
                         color: themeManager.color("textSecondary")
-                        font { family: global.fonts.sans; pixelSize: vpx(15) }
+                        font { family: global.fonts.sans; pixelSize: vpx(18) }
                     }
                     Text {
                         text: listMetaRow.selGame ? listMetaRow.selGame.developer : ""
                         color: themeManager.color("textPrimary")
-                        font { family: global.fonts.sans; pixelSize: vpx(18); bold: true }
+                        font { family: global.fonts.sans; pixelSize: vpx(22); bold: true }
                     }
                 }
 
@@ -960,12 +960,12 @@ FocusScope {
                     Text {
                         text: "Publisher"
                         color: themeManager.color("textSecondary")
-                        font { family: global.fonts.sans; pixelSize: vpx(15) }
+                        font { family: global.fonts.sans; pixelSize: vpx(18) }
                     }
                     Text {
                         text: listMetaRow.selGame ? listMetaRow.selGame.publisher : ""
                         color: themeManager.color("textPrimary")
-                        font { family: global.fonts.sans; pixelSize: vpx(18); bold: true }
+                        font { family: global.fonts.sans; pixelSize: vpx(22); bold: true }
                     }
                 }
             }

@@ -1,19 +1,43 @@
 .pragma library
 
 var ASPECT_RATIOS = {
-    "1:1":    { widthRatio: 1,   heightRatio: 1   },
-    "4:3":    { widthRatio: 4,   heightRatio: 3   },
-    "3:4":    { widthRatio: 3,   heightRatio: 4   },
-    "8:7":    { widthRatio: 8,   heightRatio: 7   },
-    "3:5":    { widthRatio: 3,   heightRatio: 5   },
-    "2:3":    { widthRatio: 2,   heightRatio: 3   },
-    "custom": { widthRatio: 1,   heightRatio: 1.5 }
+    "1:1": { widthRatio: 1, heightRatio: 1 },
+    "4:3": { widthRatio: 4, heightRatio: 3 },
+    "3:4": { widthRatio: 3, heightRatio: 4 },
+    "8:7": { widthRatio: 8, heightRatio: 7 },
+    "3:5": { widthRatio: 3, heightRatio: 5 },
+    "2:3": { widthRatio: 2, heightRatio: 3 },
+    "custom": { widthRatio: 1, heightRatio: 1.5 }
+}
+
+function parseCustomRatio(ratioString) {
+    if (!ratioString) return null
+    var parts
+    if (ratioString.indexOf("custom:") === 0) {
+        parts = ratioString.substring(7).split(":")
+    } else {
+        parts = ratioString.split(":")
+    }
+    if (parts.length !== 2) return null
+    var w = parseFloat(parts[0])
+    var h = parseFloat(parts[1])
+    if (isNaN(w) || isNaN(h) || w <= 0 || h <= 0) return null
+    return { widthRatio: w, heightRatio: h }
+}
+
+function isCustomRatioKey(key) {
+    if (!key || key === "custom") return key === "custom"
+    return key.indexOf("custom:") === 0
 }
 
 var VIRTUAL_COLLECTION_RATIO = "2:3"
 
 function getRatio(key) {
     if (!key || key === "") return null
+    if (key && key.indexOf("custom:") === 0) {
+        var parsed = parseCustomRatio(key)
+        return parsed ? parsed : ASPECT_RATIOS["custom"]
+    }
     return ASPECT_RATIOS[key] || null
 }
 
@@ -30,7 +54,7 @@ function fitToRatio(cW, cH, key) {
 function gridCellHeight(cellWidth, key) {
     var r = getRatio(key)
     if (!r) return Math.floor(cellWidth * 1.45)
-    return Math.floor(cellWidth * (r.heightRatio / r.widthRatio))
+        return Math.floor(cellWidth * (r.heightRatio / r.widthRatio))
 }
 
 function listViewHeights(featuredW, thumbW, key) {
@@ -38,20 +62,20 @@ function listViewHeights(featuredW, thumbW, key) {
     if (!r) {
         return {
             featuredH: Math.round(featuredW * (450 / 280)),
-            thumbH:    Math.round(thumbW    * (290 / 130))
+            thumbH: Math.round(thumbW * (290 / 130))
         }
     }
     var aspect = r.heightRatio / r.widthRatio
     return {
         featuredH: Math.round(featuredW * aspect),
-        thumbH:    Math.round(thumbW    * aspect)
+        thumbH: Math.round(thumbW * aspect)
     }
 }
 
 function isSpecialCollection(collectionEntry) {
     if (!collectionEntry) return false
-    return collectionEntry.isVirtual === true &&
-           (collectionEntry.shortName === "now" || collectionEntry.shortName === "favs")
+        return collectionEntry.isVirtual === true &&
+        (collectionEntry.shortName === "now" || collectionEntry.shortName === "favs")
 }
 
 // DEPRECATED: ya no se usa desde las vistas. Mantenido solo por compatibilidad.
@@ -59,8 +83,8 @@ function isSpecialCollection(collectionEntry) {
 // usando el ratioMap recibido como prop.
 function ratioForCollection(collectionEntry) {
     if (!collectionEntry) return ""
-    if (isSpecialCollection(collectionEntry)) return VIRTUAL_COLLECTION_RATIO
-    return ""
+        if (isSpecialCollection(collectionEntry)) return VIRTUAL_COLLECTION_RATIO
+            return ""
 }
 
 function getUniqueGenresFromGames(maxGenres) {
