@@ -66,9 +66,10 @@ function listViewHeights(featuredW, thumbW, key) {
         }
     }
     var aspect = r.heightRatio / r.widthRatio
+    var isLandscape = (r.widthRatio / r.heightRatio) >= 1.0
     return {
-        featuredH: Math.round(featuredW * aspect),
-        thumbH: Math.round(thumbW * aspect)
+        featuredH: Math.round(featuredW * aspect * (isLandscape ? 1.01 : 1.0)),
+        thumbH: Math.round(thumbW * aspect * (isLandscape ? 0.95 : 1.0))
     }
 }
 

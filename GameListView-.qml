@@ -41,94 +41,24 @@ FocusScope {
 
     readonly property bool isWidescreenRatio: {
         var r = activeRatio
-        if (r === "8:7" || r === "1:1") return true
-        if (r && r.indexOf("custom:") === 0) {
-            var parts = r.substring(7).split(":")
-            if (parts.length === 2) {
-                var w = parseFloat(parts[0])
-                var h = parseFloat(parts[1])
-                if (!isNaN(w) && !isNaN(h) && h > 0) return (w / h) >= 1.0
-            }
-        }
-
-        if (r && r.indexOf(":") !== -1 && r.indexOf("custom") === -1) {
-            var ps = r.split(":")
-            if (ps.length === 2) {
-                var rw = parseFloat(ps[0])
-                var rh = parseFloat(ps[1])
-                if (!isNaN(rw) && !isNaN(rh) && rh > 0) return (rw / rh) >= 1.0
-            }
-        }
-        return false
+        return r === "8:7" || r === "1:1"
     }
 
     readonly property bool isFourThreeRatio: activeRatio === "4:3"
-
-    readonly property int featuredW_custom: {
-        var r = activeRatio
-        var ratio = 1.0
-        if (r && r.indexOf("custom:") === 0) {
-            var parts = r.substring(7).split(":")
-            if (parts.length === 2) {
-                var w = parseFloat(parts[0])
-                var h = parseFloat(parts[1])
-                if (!isNaN(w) && !isNaN(h) && h > 0) ratio = w / h
-            }
-        } else if (r && r.indexOf(":") !== -1) {
-            var ps = r.split(":")
-            if (ps.length === 2) {
-                var rw = parseFloat(ps[0])
-                var rh = parseFloat(ps[1])
-                if (!isNaN(rw) && !isNaN(rh) && rh > 0) ratio = rw / rh
-            }
-        }
-        return Math.round(vpx(390) * ratio)
-    }
-
-    readonly property int thumbW_custom: {
-        var r = activeRatio
-        var ratio = 1.0
-        if (r && r.indexOf("custom:") === 0) {
-            var parts = r.substring(7).split(":")
-            if (parts.length === 2) {
-                var w = parseFloat(parts[0])
-                var h = parseFloat(parts[1])
-                if (!isNaN(w) && !isNaN(h) && h > 0) ratio = w / h
-            }
-        } else if (r && r.indexOf(":") !== -1) {
-            var ps = r.split(":")
-            if (ps.length === 2) {
-                var rw = parseFloat(ps[0])
-                var rh = parseFloat(ps[1])
-                if (!isNaN(rw) && !isNaN(rh) && rh > 0) ratio = rw / rh
-            }
-        }
-        return Math.round(vpx(190) * ratio)
-    }
-
-    readonly property bool isCustomRatio: {
-        var r = activeRatio
-        if (!r) return false
-        if (r.indexOf("custom:") === 0) return true
-        var predefined = ["1:1","4:3","3:4","8:7","3:5","2:3"]
-        return predefined.indexOf(r) === -1 && r !== ""
-    }
 
     readonly property int featuredW_fourThree: vpx(500)
     readonly property int thumbW_fourThree: vpx(320)
 
     readonly property int featuredW: {
-        if (isFourThreeRatio)   return featuredW_fourThree
-        if (isWidescreenRatio)  return isCustomRatio ? featuredW_custom : featuredW_landscape
-        if (isCustomRatio)      return featuredW_custom
-        return featuredW_portrait
+        if (isFourThreeRatio) return featuredW_fourThree
+            if (isWidescreenRatio) return featuredW_landscape
+                return featuredW_portrait
     }
 
     readonly property int thumbW: {
-        if (isFourThreeRatio)   return thumbW_fourThree
-        if (isWidescreenRatio)  return isCustomRatio ? thumbW_custom : thumbW_landscape
-        if (isCustomRatio)      return thumbW_custom
-        return thumbW_portrait
+        if (isFourThreeRatio) return thumbW_fourThree
+            if (isWidescreenRatio) return thumbW_landscape
+                return thumbW_portrait
     }
 
     signal gameSelected(var game)
@@ -180,7 +110,7 @@ FocusScope {
 
     ListView {
         id: carousel
-        anchors { left: parent.left; right: parent.right; top: parent.top; topMargin: vpx(30); leftMargin: vpx(45) }
+        anchors { left: parent.left; right: parent.right; top: parent.top; topMargin: vpx(100); leftMargin: vpx(100) }
         height: root.featuredH + vpx(24)
 
         orientation: ListView.Horizontal
@@ -191,7 +121,7 @@ FocusScope {
         preferredHighlightEnd: vpx(48) + root.featuredW
         clip: false; focus: true
         currentIndex: root.currentGameIndex
-        spacing: vpx(34)
+        spacing: vpx(24)
         model: root.gameModel
 
         onCurrentIndexChanged: root.currentGameIndex = currentIndex

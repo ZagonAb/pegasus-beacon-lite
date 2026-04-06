@@ -672,21 +672,7 @@ FocusScope {
             spacing: vpx(20)
             FooterButton { buttonText: "B"; labelText: "Back" }
             FooterButton { buttonText: "Y"; labelText: "Configuration"; onClicked: root.openSettings() }
-            FooterButton {
-                buttonText: "X"
-                labelText: "Game"
-                onClicked: {
-                    if (!root.configOpen && !root.contextMenuOpen) {
-                        var model = root.searchActive ? root.searchResultModel : root.activeGameModel
-                        var game = null
-                        if (model) {
-                            if (model.get) game = model.get(root.currentGameIndex)
-                            else if (model.length) game = model[root.currentGameIndex]
-                        }
-                        if (game) globalContextMenu.open(game)
-                    }
-                }
-            }
+            FooterButton { buttonText: "X"; labelText: "Game menu" }
             Rectangle {
                 width: vpx(1)
                 height: vpx(20)
