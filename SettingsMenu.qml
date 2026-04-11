@@ -22,7 +22,8 @@ FocusScope {
     readonly property var sections: [
         { id: "preferences", label: "Preferences", icon: "⚙", hasContent: true },
         { id: "platforms", label: "Platforms", icon: "▦", hasContent: true },
-        { id: "aspectRatio", label: "Aspect Ratio", icon: "⊡", hasContent: true }
+        { id: "aspectRatio", label: "Aspect Ratio", icon: "⊡", hasContent: true },
+        { id: "about", label: "About", icon: "ℹ", hasContent: true }
     ]
 
     function open() {
@@ -43,6 +44,12 @@ FocusScope {
     function _enterRight() {
         var sec = sections[currentSection]
         if (!sec.hasContent) return
+
+            if (sec.id === "about") {
+                rightFocused = false
+                return
+            }
+
             rightFocused = true
 
             if (sec.id === "preferences") {
@@ -107,16 +114,21 @@ FocusScope {
                 height: vpx(16)
                 color: parent.color
             }
-
             Row {
                 id: rowPanel
                 anchors { left: parent.left; leftMargin: vpx(28); verticalCenter: parent.verticalCenter }
-                spacing: vpx(14)
-                Text {
-                    text: "•"
-                    color: themeManager.color("textTertiary")
-                    font { family: global.fonts.condensed; pixelSize: vpx(24) }
+                spacing: vpx(10)
+                Image {
+                    source: "assets/icon/pegasus.svg"
+                    width: vpx(42)
+                    height: vpx(42)
+                    fillMode: Image.PreserveAspectFit
+                    mipmap: true
                     anchors.verticalCenter: parent.verticalCenter
+                    layer.enabled: true
+                    layer.effect: ColorOverlay {
+                        color: themeManager.color("textTertiary")
+                    }
                 }
                 Text {
                     text: "Pegasus Beacon Lite"
@@ -206,7 +218,17 @@ FocusScope {
                         }
                         if (api.keys.isAccept(event) || event.key === Qt.Key_Right) {
                             event.accepted = true
+                            var sec = root.sections[root.currentSection]
+                            if (sec.id === "about") {
+                                root.rightFocused = false
+                                return
+                            }
                             root._enterRight()
+                            return
+                        }
+                        if (event.key === Qt.Key_Left && root.currentSection === root.sections.findIndex(s => s.id === "about")) {
+                            event.accepted = true
+                            root.rightFocused = false
                             return
                         }
                     }
@@ -252,7 +274,8 @@ FocusScope {
                                     if (sec.id === "preferences") return "assets/icon/preferences.svg"
                                         if (sec.id === "platforms") return "assets/icon/platforms.svg"
                                             if (sec.id === "aspectRatio") return "assets/icon/aspect-ratio.svg"
-                                                return ""
+                                                if (sec.id === "about") return "assets/icon/info.svg"
+                                                    return ""
                                 }
                                 fillMode: Image.PreserveAspectFit
                                 mipmap: true
@@ -280,7 +303,8 @@ FocusScope {
                                     if (sec.id === "platforms") return "Reorder collections"
                                         if (sec.id === "preferences") return "View mode"
                                             if (sec.id === "aspectRatio") return "Box art fit"
-                                                return sec.hasContent ? "Settings" : "Coming soon"
+                                                if (sec.id === "about") return "Information"
+                                                    return sec.hasContent ? "Settings" : "Coming soon"
                                 }
                                 color: sectionRow.isCurrent ? themeManager.color("textSecondary") : themeManager.color("textDisabled")
                                 font { family: global.fonts.sans; pixelSize: vpx(22) }
@@ -838,6 +862,224 @@ FocusScope {
                                 }
                             }
                         }
+                    }
+                }
+
+                Item {
+                    id: aboutPanel
+                    anchors.fill: parent
+                    visible: root.sections[root.currentSection].id === "about"
+
+                    Flickable {
+                        anchors.fill: parent
+                        contentHeight: aboutContent.height + vpx(56)
+                        clip: true
+                        boundsBehavior: Flickable.StopAtBounds
+
+                        Column {
+                            id: aboutContent
+                            anchors {
+                                top: parent.top
+                                topMargin: vpx(10)
+                                left: parent.left
+                                leftMargin: vpx(40)
+                                right: parent.right
+                                rightMargin: vpx(40)
+                            }
+                            spacing: vpx(12)
+
+                            Row {
+                                anchors.horizontalCenter: parent.horizontalCenter
+                                spacing: vpx(20)
+
+                                Image {
+                                    source: "assets/icon/pegasus.svg"
+                                    width: vpx(80)
+                                    height: vpx(80)
+                                    fillMode: Image.PreserveAspectFit
+                                    mipmap: true
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    layer.enabled: true
+                                    layer.effect: ColorOverlay {
+                                        color: themeManager.color("accent")
+                                    }
+                                }
+
+                                Column {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    spacing: vpx(8)
+
+                                    Text {
+                                        text: "Pegasus Beacon Lite"
+                                        color: themeManager.color("textPrimary")
+                                        font { family: global.fonts.sans; pixelSize: vpx(38); bold: true }
+                                    }
+
+                                    Text {
+                                        text: "Version 1.0"
+                                        color: themeManager.color("textSecondary")
+                                        font { family: global.fonts.condensed; pixelSize: vpx(20) }
+                                    }
+                                }
+                            }
+
+                            Rectangle {
+                                width: parent.width
+                                height: vpx(1)
+                                color: themeManager.color("border")
+                                opacity: 0.3
+                            }
+
+                            Column {
+                                width: parent.width
+                                spacing: vpx(24)
+
+                                Row {
+                                    spacing: vpx(16)
+
+                                    Text {
+                                        text: "Developer"
+                                        width: vpx(140)
+                                        color: themeManager.color("textSecondary")
+                                        font { family: global.fonts.sans; pixelSize: vpx(22) }
+                                    }
+
+                                    Text {
+                                        text: "ZagonAb"
+                                        color: themeManager.color("accent")
+                                        font { family: global.fonts.sans; pixelSize: vpx(22); bold: true }
+                                    }
+                                }
+
+                                Row {
+                                    spacing: vpx(16)
+
+                                    Text {
+                                        text: "GitHub"
+                                        width: vpx(140)
+                                        color: themeManager.color("textSecondary")
+                                        font { family: global.fonts.sans; pixelSize: vpx(22) }
+                                    }
+
+                                    Text {
+                                        text: "github.com/ZagonAb"
+                                        color: themeManager.color("textPrimary")
+                                        font {
+                                            family: global.fonts.sans
+                                            pixelSize: vpx(22)
+                                            underline: githubLinkMa.containsMouse
+                                        }
+
+                                        MouseArea {
+                                            id: githubLinkMa
+                                            anchors.fill: parent
+                                            hoverEnabled: true
+                                            cursorShape: containsMouse ? Qt.PointingHandCursor : Qt.ArrowCursor
+                                            onClicked: Qt.openUrlExternally("https://github.com/ZagonAb")
+                                        }
+                                    }
+                                }
+
+                                Row {
+                                    spacing: vpx(16)
+
+                                    Text {
+                                        text: "License"
+                                        width: vpx(140)
+                                        color: themeManager.color("textSecondary")
+                                        font { family: global.fonts.sans; pixelSize: vpx(22) }
+                                    }
+
+                                    Column {
+                                        spacing: vpx(6)
+
+                                        Text {
+                                            text: "CC BY-NC-SA 4.0"
+                                            color: themeManager.color("textPrimary")
+                                            font {
+                                                family: global.fonts.sans
+                                                pixelSize: vpx(22)
+                                                underline: licenseLinkMa.containsMouse
+                                            }
+
+                                            MouseArea {
+                                                id: licenseLinkMa
+                                                anchors.fill: parent
+                                                hoverEnabled: true
+                                                cursorShape: containsMouse ? Qt.PointingHandCursor : Qt.ArrowCursor
+                                                onClicked: Qt.openUrlExternally("https://creativecommons.org/licenses/by-nc-sa/4.0/")
+                                            }
+                                        }
+
+                                        Text {
+                                            text: "Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International"
+                                            color: themeManager.color("textTertiary")
+                                            font { family: global.fonts.condensed; pixelSize: vpx(14) }
+                                            wrapMode: Text.WordWrap
+                                            width: parent.width
+                                        }
+                                    }
+                                }
+
+                                Rectangle {
+                                    width: parent.width
+                                    height: vpx(1)
+                                    color: themeManager.color("border")
+                                    opacity: 0.3
+                                }
+
+                                Column {
+                                    width: parent.width
+                                    spacing: vpx(12)
+
+                                    Text {
+                                        text: "Disclaimer"
+                                        color: themeManager.color("textSecondary")
+                                        font { family: global.fonts.sans; pixelSize: vpx(22); bold: true }
+                                    }
+
+                                    Text {
+                                        text: "Pegasus Beacon Lite is an independent, open-source project created from scratch as a recreation inspired by the user interface of Beacon Game Launcher. Beacon Game Launcher is proprietary software and this project has no affiliation, association, authorization, or endorsement from Beacon Game Launcher or its developers. All code in this project is original and written specifically for Pegasus Beacon Lite."
+                                        color: themeManager.color("textTertiary")
+                                        font { family: global.fonts.sans; pixelSize: vpx(16) }
+                                        wrapMode: Text.WordWrap
+                                        width: parent.width
+                                        lineHeight: 1.5
+                                    }
+                                }
+
+                                Column {
+                                    width: parent.width
+                                    spacing: vpx(12)
+
+                                    Text {
+                                        text: "Inspired by"
+                                        color: themeManager.color("textSecondary")
+                                        font { family: global.fonts.sans; pixelSize: vpx(22); bold: true }
+                                    }
+
+                                    Text {
+                                        text: "Beacon Game Launcher"
+                                        color: themeManager.color("textPrimary")
+                                        font { family: global.fonts.sans; pixelSize: vpx(20) }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    Rectangle {
+                        anchors {
+                            right: parent.right
+                            rightMargin: vpx(4)
+                            top: parent.top
+                            bottom: parent.bottom
+                        }
+                        width: vpx(3)
+                        radius: vpx(2)
+                        color: themeManager.color("borderLight")
+                        opacity: 0.3
+                        visible: aboutContent.height > parent.height
                     }
                 }
 
