@@ -154,7 +154,7 @@ FocusScope {
             left: btnL1.right
             right: btnR1.left
             leftMargin: vpx(20)
-            rightMargin: vpx(45)
+            rightMargin: vpx(20)
             top: parent.top
             bottom: parent.bottom
         }
@@ -214,7 +214,7 @@ FocusScope {
         id: btnR1
         anchors {
             right: parent.right
-            rightMargin: vpx(55)
+            rightMargin: vpx(150)
             verticalCenter: parent.verticalCenter
         }
         width: vpx(46)

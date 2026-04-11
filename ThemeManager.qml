@@ -4,7 +4,41 @@ QtObject {
     id: themeManager
 
     property string currentTheme: "dark"
+    property string accentColorName: "default"
+
+    property color accentColorValue: {
+        if (accentColorName === "default") {
+            return currentTheme === "dark" ? "#FFFFFF" : "#212529"
+        }
+        return _colorMap[accentColorName] || "#FFFFFF"
+    }
+
+    readonly property color effectiveAccentColor: {
+        if (accentColorName !== "default")
+            return accentColorValue
+            else
+                return color("accent")
+    }
+
+    readonly property var _colorMap: ({
+        "emerald":"#10B981",
+        "amber":"#F59E0B",
+        "fuchsia":"#D946EF",
+        "skyblue":"#0EA5E9",
+        "ruby":"#EF4444",
+        "purple":"#8B5CF6"
+    })
+
     signal themeChanged()
+
+    signal accentColorChanged()
+
+    function setAccentColor(name) {
+        if (accentColorName === name) return
+            accentColorName = name
+            api.memory.set("themeColor", name)
+            accentColorChanged()
+    }
 
     function setTheme(theme) {
         if (theme === currentTheme) return
@@ -17,6 +51,12 @@ QtObject {
         var saved = api.memory.get("appTheme")
         if (saved === "light" || saved === "dark")
             currentTheme = saved
+
+            var savedColor = api.memory.get("themeColor")
+            if (savedColor && _colorMap[savedColor] !== undefined)
+                accentColorName = savedColor
+                else
+                    accentColorName = "default"
     }
 
     readonly property var darkPalette: ({

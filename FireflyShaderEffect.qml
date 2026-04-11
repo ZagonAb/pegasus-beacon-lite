@@ -4,109 +4,122 @@ Item {
     id: rootItem
     anchors.fill: parent
 
-    property real theme:   0.0
-    property real speed:   1.0
+    property real theme: 0.0
+    property real speed: 1.0
     property real density: 1.0
-    property real time:    0.0
+    property real time: 0.0
+    property color accentColor: "#88FFFFFF"
 
     Timer {
-        interval: 32
-        running:  true
-        repeat:   true
-        onTriggered: rootItem.time += 0.032
+        interval: 33
+        running: true
+        repeat: true
+        onTriggered: rootItem.time += 0.033
     }
 
     ShaderEffect {
         anchors.fill: parent
 
-        property real u_time:    rootItem.time
-        property real u_theme:   rootItem.theme
-        property real u_speed:   rootItem.speed
+        property real u_time: rootItem.time
+        property real u_theme: rootItem.theme
+        property real u_speed: rootItem.speed
         property real u_density: rootItem.density
-        property real u_width:   width
-        property real u_height:  height
+        property real u_width: width
+        property real u_height: height
+        property color u_accentColor: rootItem.accentColor
 
         fragmentShader: "
-            varying highp vec2 qt_TexCoord0;
-            uniform highp float u_time;
-            uniform highp float u_theme;
-            uniform highp float u_speed;
-            uniform highp float u_density;
-            uniform highp float u_width;
-            uniform highp float u_height;
+        #ifdef GL_ES
+        precision highp float;
+        #endif
 
-            // Hash rapido: una sola multiplicacion matricial, sin loops internos
-            highp float hash(highp vec2 p) {
-                p = fract(p * vec2(443.897, 441.423));
-                p += dot(p, p.yx + 19.19);
-                return fract((p.x + p.y) * p.x);
-            }
+        varying vec2 qt_TexCoord0;
+        uniform float u_time;
+        uniform float u_theme;
+        uniform float u_speed;
+        uniform float u_density;
+        uniform float u_width;
+        uniform float u_height;
+        uniform vec4 u_accentColor;
 
-            // Aproximacion de sin() usando polinomio — 3-4x mas rapido en GPU movil
-            // Valido para x en [-pi, pi], error < 0.002
-            highp float fastSin(highp float x) {
-                x = mod(x + 3.14159265, 6.28318530) - 3.14159265;
-                highp float x2 = x * x;
-                return x * (1.0 - x2 * (0.16666667 - x2 * 0.00833333));
-            }
+        float hash(vec2 p) {
+        return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+    }
 
-            void main() {
-                highp float w = max(u_width,  1.0);
-                highp float h = max(u_height, 1.0);
+    float fastSin(float x) {
+    x = fract(x / 6.28318) * 6.28318 - 3.14159;
+    float x2 = x * x;
+    return x * (0.999996 - x2 * (0.166666 - x2 * 0.008333));
+    }
 
-                highp vec2 uv = qt_TexCoord0 * (vec2(w, h) / 120.0) * u_density;
-                highp vec2 id = floor(uv);
-                highp vec2 gv = fract(uv) - 0.5;
+    void main() {
+    float w = max(u_width, 1.0);
+    float h = max(u_height, 1.0);
 
-                highp float t = mod(u_time, 100.0) * u_speed;
+    vec2 uv = qt_TexCoord0 * (vec2(w, h) / 160.0) * u_density;
+    vec2 id = floor(uv);
+    vec2 gv = fract(uv) - 0.5;
 
-                highp float totalGlow = 0.0;
+    float t = mod(u_time, 100.0) * u_speed;
+    float totalGlow = 0.0;
 
-                // Loop 3x3 reducido a solo 5 celdas: centro + 4 cardinales
-                // Las esquinas aportan muy poco glow y cuestan igual que las demas
-                highp vec2 offsets[5];
-                offsets[0] = vec2( 0.0,  0.0);
-                offsets[1] = vec2( 1.0,  0.0);
-                offsets[2] = vec2(-1.0,  0.0);
-                offsets[3] = vec2( 0.0,  1.0);
-                offsets[4] = vec2( 0.0, -1.0);
+    vec2 offsets[3];
+    offsets[0] = vec2(0.0, 0.0);
+    offsets[1] = vec2(1.0, 0.0);
+    offsets[2] = vec2(0.0, 1.0);
 
-                for (int i = 0; i < 5; i++) {
-                    highp vec2 nid = id + offsets[i];
-                    highp vec2 ngv = gv  - offsets[i];
+    vec2 nid0 = id + offsets[0];
+    vec2 ngv0 = gv - offsets[0];
+    float n00 = hash(nid0);
+    float n01 = hash(nid0 + vec2(13.7, 5.3));
+    float phaseX0 = t * (0.3 + n01 * 0.4) + n00 * 6.28318;
+    vec2 pos0 = vec2(fastSin(phaseX0), fastSin(phaseX0 + 1.5708)) * 0.38;
+    float dist0 = length(ngv0 - pos0);
+    float blink0 = 0.55 + 0.45 * fastSin(t * (1.5 + n01 * 2.0) + n00 * 6.28318);
 
-                    // Solo 2 hash por celda en lugar de 4
-                    // n0 controla fase X e intensidad, n1 controla fase Y y parpadeo
-                    highp float n0 = hash(nid);
-                    highp float n1 = hash(nid + vec2(13.7, 5.3));
+    float core0 = clamp(1.0 - dist0 / 0.022, 0.0, 1.0);
+    float halo0 = clamp(1.0 - dist0 / 0.18, 0.0, 1.0) * 0.25;
+    totalGlow += (core0 + halo0) * blink0;
 
-                    // Movimiento con fastSin en lugar de sin/cos nativos
-                    highp float phaseX = t * (0.3 + n1 * 0.4) + n0 * 6.28318;
-                    highp float phaseY = phaseX + 1.5708; // +pi/2 = coseno gratis
-                    highp vec2 pos = vec2(
-                        fastSin(phaseX) * 0.38,
-                        fastSin(phaseY) * 0.38
-                    );
+    vec2 nid1 = id + offsets[1];
+    vec2 ngv1 = gv - offsets[1];
+    float n10 = hash(nid1);
+    float n11 = hash(nid1 + vec2(13.7, 5.3));
+    float phaseX1 = t * (0.3 + n11 * 0.4) + n10 * 6.28318;
+    vec2 pos1 = vec2(fastSin(phaseX1), fastSin(phaseX1 + 1.5708)) * 0.38;
+    float dist1 = length(ngv1 - pos1);
+    float blink1 = 0.55 + 0.45 * fastSin(t * (1.5 + n11 * 2.0) + n10 * 6.28318);
+    float core1 = clamp(1.0 - dist1 / 0.022, 0.0, 1.0);
+    float halo1 = clamp(1.0 - dist1 / 0.18, 0.0, 1.0) * 0.25;
+    totalGlow += (core1 + halo1) * blink1;
 
-                    highp vec2  delta = ngv - pos;
-                    highp float dist  = length(delta);
+    vec2 nid2 = id + offsets[2];
+    vec2 ngv2 = gv - offsets[2];
+    float n20 = hash(nid2);
+    float n21 = hash(nid2 + vec2(13.7, 5.3));
+    float phaseX2 = t * (0.3 + n21 * 0.4) + n20 * 6.28318;
+    vec2 pos2 = vec2(fastSin(phaseX2), fastSin(phaseX2 + 1.5708)) * 0.38;
+    float dist2 = length(ngv2 - pos2);
+    float blink2 = 0.55 + 0.45 * fastSin(t * (1.5 + n21 * 2.0) + n20 * 6.28318);
+    float core2 = clamp(1.0 - dist2 / 0.022, 0.0, 1.0);
+    float halo2 = clamp(1.0 - dist2 / 0.18, 0.0, 1.0) * 0.25;
+    totalGlow += (core2 + halo2) * blink2;
 
-                    // Parpadeo: reusar n1 como segundo hash (antes era n2)
-                    highp float blink = 0.55 + 0.45 * fastSin(t * (1.5 + n1 * 2.0) + n0 * 6.28318);
+    totalGlow = min(totalGlow, 0.85);
 
-                    highp float core = smoothstep(0.022, 0.0, dist);
-                    highp float halo = smoothstep(0.18,  0.0, dist) * 0.25;
+    vec3 bg;
+    vec3 fireflyColor;
 
-                    totalGlow += (core + halo) * blink;
-                }
+    if (u_theme > 0.5) {
+        bg = vec3(0.97, 0.97, 0.97);
+        fireflyColor = u_accentColor.rgb * 0.35;
+    } else {
+        bg = vec3(0.04, 0.04, 0.05);
+        fireflyColor = u_accentColor.rgb;
+    }
 
-                totalGlow = clamp(totalGlow, 0.0, 1.0);
-
-                highp vec3 bg      = (u_theme > 0.5) ? vec3(0.97, 0.97, 0.97) : vec3(0.04, 0.04, 0.05);
-                highp vec3 firefly = (u_theme > 0.5) ? vec3(0.10, 0.10, 0.12) : vec3(0.88, 0.92, 1.00);
-
-                gl_FragColor = vec4(mix(bg, firefly, totalGlow), 1.0);
-            }
-        "
+    gl_FragColor = vec4(mix(bg, fireflyColor, totalGlow), 1.0);
+    }
+    "
     }
 }

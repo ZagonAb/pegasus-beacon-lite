@@ -318,21 +318,33 @@ FocusScope {
                                     opacity: cell.isActive ? 1.0 : 0.0
                                     Behavior on opacity { NumberAnimation { duration: 150 } }
 
-                                    Image {
-                                        id: favoriteIcon
+                                    Item {
+                                        id: favoriteIconWrapper
                                         width: vpx(22)
                                         height: vpx(22)
-                                        source: "assets/icon/favorite-on.svg"
                                         visible: cell.game ? cell.game.favorite === true : false
-                                        fillMode: Image.PreserveAspectFit
-                                        mipmap: true
                                         anchors.verticalCenter: parent.verticalCenter
+
+                                        Image {
+                                            id: favoriteIcon
+                                            anchors.fill: parent
+                                            source: "assets/icon/favorite-on.svg"
+                                            fillMode: Image.PreserveAspectFit
+                                            mipmap: true
+                                            visible: false
+                                        }
+
+                                        ColorOverlay {
+                                            anchors.fill: favoriteIcon
+                                            source: favoriteIcon
+                                            color: themeManager.effectiveAccentColor
+                                        }
                                     }
 
                                     Text {
-                                        width: parent.width - (favoriteIcon.visible ? favoriteIcon.width + parent.spacing : 0)
+                                        width: parent.width - (favoriteIconWrapper.visible ? favoriteIconWrapper.width + parent.spacing : 0)
                                         text: cell.game ? cell.game.title : ""
-                                        color: "#FFFFFF"
+                                        color: themeManager.effectiveAccentColor
                                         font { family: global.fonts.sans; pixelSize: vpx(22); bold: true }
                                         wrapMode: Text.WordWrap
                                         maximumLineCount: 4
@@ -348,7 +360,7 @@ FocusScope {
                             width: gameArtContainer.width + vpx(10)
                             height: gameArtContainer.height + vpx(10)
                             radius: root.cornerRadius + vpx(5); color: "transparent"
-                            border { width: vpx(2); color: themeManager.color("accent") }
+                            border { width: vpx(3); color: themeManager.effectiveAccentColor }
                             opacity: (!root.backdropEnabled && cell.isActive) ? 1.0 : 0.0
                             Behavior on opacity { NumberAnimation { duration: 150 } }
                         }
@@ -359,7 +371,7 @@ FocusScope {
                         anchors.centerIn: imageContainer
                         width: imageContainer.width + vpx(4); height: imageContainer.height + vpx(4)
                         radius: root.cornerRadius + vpx(5); color: "transparent"
-                        border { width: vpx(2); color: themeManager.color("accent") }
+                        border { width: vpx(3); color: themeManager.effectiveAccentColor }
                         visible: root.backdropEnabled
                         opacity: (root.backdropEnabled && cell.isActive) ? 1.0 : 0.0
                         Behavior on opacity { NumberAnimation { duration: 150 } }

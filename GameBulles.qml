@@ -32,7 +32,7 @@ FocusScope {
         onTriggered: {
             root._acceptHeld = false
             var g = root.gameModel.get ? root.gameModel.get(root.currentGameIndex)
-                                       : root.gameModel[root.currentGameIndex]
+            : root.gameModel[root.currentGameIndex]
             if (g) root.contextMenuRequested(g)
         }
     }
@@ -322,7 +322,7 @@ FocusScope {
                     if (root._acceptHeld) {
                         root._acceptHeld = false
                         var g = root.gameModel.get ? root.gameModel.get(root.currentGameIndex)
-                                                   : root.gameModel[root.currentGameIndex]
+                        : root.gameModel[root.currentGameIndex]
                         if (g) root.gameSelected(g)
                     }
                 }
@@ -427,6 +427,10 @@ FocusScope {
                         target: flick
                         function onContentYChanged() { activeCanvas.requestPaint() }
                     }
+                    Connections {
+                        target: themeManager
+                        function onEffectiveAccentColorChanged() { activeCanvas.requestPaint() }
+                    }
 
                     onPaint: {
                         var ctx = getContext("2d")
@@ -441,7 +445,7 @@ FocusScope {
                             var cx = root.bubbleCX(lo) + root.animatedOffsetX
                             var cy = root.bubbleCY(lo) + root.animatedOffsetY
 
-                            ctx.strokeStyle = themeManager.color("accent")
+                            ctx.strokeStyle = themeManager.effectiveAccentColor
                             ctx.lineWidth = 3
                             ctx.beginPath()
                             ctx.arc(cx, cy, r + 2, 0, Math.PI * 2)
@@ -504,7 +508,7 @@ FocusScope {
 
             onIsActiveChanged: {
                 if (isActive) reflectionWrapper.startAnimation()
-                else          reflectionWrapper.stopAnimation()
+                    else          reflectionWrapper.stopAnimation()
             }
 
             Item {
@@ -610,21 +614,33 @@ FocusScope {
                 spacing: parent.width * 0.05
                 visible: isActive
 
-                Image {
-                    id: favoriteIcon
+                Item {
+                    id: favoriteIconWrapper
                     width: parent.parent.width * 0.18
                     height: parent.parent.width * 0.18
-                    source: "assets/icon/favorite-on.svg"
                     visible: gameData ? gameData.favorite === true : false
-                    fillMode: Image.PreserveAspectFit
-                    mipmap: true
                     anchors.verticalCenter: parent.verticalCenter
+
+                    Image {
+                        id: favoriteIcon
+                        anchors.fill: parent
+                        source: "assets/icon/favorite-on.svg"
+                        fillMode: Image.PreserveAspectFit
+                        mipmap: true
+                        visible: false
+                    }
+
+                    ColorOverlay {
+                        anchors.fill: favoriteIcon
+                        source: favoriteIcon
+                        color: themeManager.effectiveAccentColor
+                    }
                 }
 
                 Text {
-                    width: parent.width - (favoriteIcon.visible ? favoriteIcon.width + parent.spacing : 0)
+                    width: parent.width - (favoriteIconWrapper.visible ? favoriteIconWrapper.width + parent.spacing : 0)
                     text: gameData ? gameData.title : ""
-                    color: "#FFFFFF"
+                    color: themeManager.effectiveAccentColor
                     font {
                         family: global.fonts.sans
                         pixelSize: vpx(20)

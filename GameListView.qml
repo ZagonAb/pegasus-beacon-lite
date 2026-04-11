@@ -411,7 +411,7 @@ FocusScope {
                     anchors.horizontalCenter: parent.horizontalCenter
                     width: gameArtContainer.width + vpx(10); height: gameArtContainer.height + vpx(10)
                     radius: root.cornerRadius + vpx(5); color: "transparent"
-                    border { width: vpx(2); color: themeManager.color("accent") }
+                    border { width: vpx(3); color: themeManager.effectiveAccentColor }
                     opacity: (!root.backdropEnabled && card.isActive) ? 1.0 : 0.0
                     Behavior on opacity { NumberAnimation { duration: 150 } }
                 }
@@ -423,7 +423,7 @@ FocusScope {
                 anchors.horizontalCenter: imageContainer.horizontalCenter
                 width: imageContainer.width + vpx(4); height: imageContainer.height + vpx(10)
                 radius: root.cornerRadius + vpx(5); color: "transparent"
-                border { width: vpx(2); color: themeManager.color("accent") }
+                border { width: vpx(3); color: themeManager.effectiveAccentColor }
                 visible: root.backdropEnabled
                 opacity: (root.backdropEnabled && card.isActive) ? 1.0 : 0.0
                 Behavior on opacity { NumberAnimation { duration: 150 } }

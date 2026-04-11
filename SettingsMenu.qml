@@ -393,7 +393,7 @@ FocusScope {
                         "hills": "Hills",
                         "ps-symbols": "PS Symbols",
                         "firefly": "Firefly",
-                        "pegasus": "Pegasus Frontend",
+                        "pegasus": "Pegasus-fe",
                         "background": "Background",
                         "screenshot": "Screenshot"
                     })
@@ -407,16 +407,21 @@ FocusScope {
                         event.accepted = true
                         if (selectedItem === "theme")
                             selectedItem = "gameview"
-                        else if (selectedItem === "bgstyle")
-                            selectedItem = "theme"
+                            else if (selectedItem === "bgstyle")
+                                selectedItem = "theme"
+                                else if (selectedItem === "themecolor")
+                                    selectedItem = "bgstyle"
                     }
                     Keys.onDownPressed: {
                         event.accepted = true
                         if (selectedItem === "gameview")
                             selectedItem = "theme"
-                        else if (selectedItem === "theme")
-                            selectedItem = "bgstyle"
+                            else if (selectedItem === "theme")
+                                selectedItem = "bgstyle"
+                                else if (selectedItem === "bgstyle")
+                                    selectedItem = "themecolor"
                     }
+
                     Keys.onPressed: {
                         if (api.keys.isCancel(event) || event.key === Qt.Key_Left) {
                             event.accepted = true
@@ -428,9 +433,11 @@ FocusScope {
                             if (selectedItem === "gameview")
                                 prefViewMenu.toggle()
                             else if (selectedItem === "theme")
-                                themeMenu.toggle()
+                                   themeMenu.toggle()
                             else if (selectedItem === "bgstyle")
-                                bgStyleMenu.toggle()
+                                   bgStyleMenu.toggle()
+                            else if (selectedItem === "themecolor")
+                                   themeColorMenu.toggle()
                             return
                         }
                     }
@@ -713,6 +720,124 @@ FocusScope {
                                 }
                             }
                         }
+
+                        Rectangle {
+                            width: parent.width
+                            height: vpx(1)
+                            color: themeManager.color("border")
+                            opacity: 0.5
+                        }
+
+                        Text {
+                            text: "Theme Color"
+                            color: themeManager.color("textSecondary")
+                            font { family: global.fonts.sans; pixelSize: vpx(22) }
+                            leftPadding: vpx(4)
+                        }
+
+                        Rectangle {
+                            id: themeColorRow
+                            width: parent.width
+                            height: vpx(80)
+                            radius: vpx(10)
+                            property bool isSelected: preferencesPanel.selectedItem === "themecolor" && preferencesPanel.panelFocused
+                            color: isSelected ? themeManager.color("surfaceSelected") : themeManager.color("surface")
+                            border {
+                                width: vpx(1)
+                                color: isSelected ? themeManager.color("accent") : themeManager.color("border")
+                            }
+                            Behavior on color { ColorAnimation { duration: 130 } }
+                            Behavior on border.color { ColorAnimation { duration: 130 } }
+
+                            Row {
+                                anchors { left: parent.left; leftMargin: vpx(16); verticalCenter: parent.verticalCenter }
+                                spacing: vpx(14)
+
+                                Item {
+                                    width: vpx(32)
+                                    height: vpx(32)
+                                    anchors.verticalCenter: parent.verticalCenter
+
+                                    Rectangle {
+                                        anchors.fill: parent
+                                        radius: vpx(6)
+                                        border.width: vpx(1)
+                                        border.color: themeManager.color("borderLight")
+                                        color: "transparent"
+                                    }
+
+                                    Image {
+                                        id: dropIcon
+                                        anchors.centerIn: parent
+                                        width: vpx(24)
+                                        height: vpx(24)
+                                        source: "assets/icon/drop.svg"
+                                        sourceSize: Qt.size(width, height)
+                                        fillMode: Image.PreserveAspectFit
+                                        visible: false
+                                    }
+
+                                    ColorOverlay {
+                                        anchors.fill: dropIcon
+                                        source: dropIcon
+                                        color: themeManager.accentColorValue
+                                    }
+                                }
+
+                                Column {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    spacing: vpx(3)
+                                    Text {
+                                        text: "Theme Color"
+                                        color: themeColorRow.isSelected ? themeManager.color("textPrimary") : themeManager.color("textSecondary")
+                                        font { family: global.fonts.sans; pixelSize: vpx(28); bold: themeColorRow.isSelected }
+                                        Behavior on color { ColorAnimation { duration: 130 } }
+                                    }
+                                    Text {
+                                        text: {
+                                            var map = { emerald:"Emerald", amber:"Amber", fuchsia:"Fuchsia",
+                                                skyblue:"Sky Blue", ruby:"Ruby", purple:"Purple", default:"Default" }
+                                                return map[themeManager.accentColorName] || "Default"
+                                        }
+                                        color: themeColorRow.isSelected ? themeManager.color("textPrimary") : themeManager.color("textTertiary")
+                                        font { family: global.fonts.sans; pixelSize: vpx(20) }
+                                        Behavior on color { ColorAnimation { duration: 130 } }
+                                    }
+                                }
+                            }
+
+                            Rectangle {
+                                anchors { right: parent.right; rightMargin: vpx(16); verticalCenter: parent.verticalCenter }
+                                width: vpx(110)
+                                height: vpx(36)
+                                radius: vpx(18)
+                                color: themeManager.color("surfaceHover")
+
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: {
+                                        var map = { emerald:"Emerald", amber:"Amber", fuchsia:"Fuchsia",
+                                            skyblue:"Sky Blue", ruby:"Ruby", purple:"Purple", default:"Default" }
+                                            return map[themeManager.accentColorName] || "Default"
+                                    }
+                                    color: themeManager.color("textPrimary")
+                                    font { family: global.fonts.sans; pixelSize: vpx(16); bold: true }
+                                }
+                            }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                onClicked: {
+                                    if (!root.rightFocused) {
+                                        root.rightFocused = true
+                                        preferencesPanel.panelFocused = true
+                                    }
+                                    preferencesPanel.selectedItem = "themecolor"
+                                    preferencesPanel.forceActiveFocus()
+                                    themeColorMenu.toggle()
+                                }
+                            }
+                        }
                     }
                 }
 
@@ -840,6 +965,22 @@ FocusScope {
 
             onStyleSelected: function(style) { root.backgroundStyle = style }
             onMenuClosed: { preferencesPanel.forceActiveFocus() }
+        }
+
+        ThemeColorMenu {
+            id: themeColorMenu
+            z: 20
+            currentColor: themeManager.accentColorName
+            anchorItem: themeColorRow
+            openDirection: "down"
+            anchorAlignment: "left"
+
+            onColorSelected: function(colorName) {
+                themeManager.setAccentColor(colorName)
+            }
+            onMenuClosed: {
+                preferencesPanel.forceActiveFocus()
+            }
         }
     }
 }

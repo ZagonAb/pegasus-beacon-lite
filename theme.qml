@@ -24,13 +24,13 @@ FocusScope {
     readonly property var searchResultModel: {
         var t = searchText.trim().toLowerCase()
         if (t === "" || !searchActive) return []
-        var results = []
-        for (var i = 0; i < api.allGames.count; i++) {
-            var g = api.allGames.get(i)
-            if (g && g.title && g.title.toLowerCase().indexOf(t) !== -1)
-                results.push(g)
-        }
-        return results
+            var results = []
+            for (var i = 0; i < api.allGames.count; i++) {
+                var g = api.allGames.get(i)
+                if (g && g.title && g.title.toLowerCase().indexOf(t) !== -1)
+                    results.push(g)
+            }
+            return results
     }
 
     property var ratioMap: ({})
@@ -72,17 +72,17 @@ FocusScope {
         if (saved !== undefined && saved !== null) {
             if (typeof saved === "object")
                 root.ratioMap = JSON.parse(JSON.stringify(saved))
-            else if (typeof saved === "string") {
-                try { root.ratioMap = JSON.parse(saved) } catch(e) { root.ratioMap = {} }
-            }
+                else if (typeof saved === "string") {
+                    try { root.ratioMap = JSON.parse(saved) } catch(e) { root.ratioMap = {} }
+                }
         }
         var savedFill = api.memory.get("fillConfig")
         if (savedFill !== undefined && savedFill !== null) {
             if (typeof savedFill === "object")
                 root.fillMap = JSON.parse(JSON.stringify(savedFill))
-            else if (typeof savedFill === "string") {
-                try { root.fillMap = JSON.parse(savedFill) } catch(e) { root.fillMap = {} }
-            }
+                else if (typeof savedFill === "string") {
+                    try { root.fillMap = JSON.parse(savedFill) } catch(e) { root.fillMap = {} }
+                }
         }
     }
 
@@ -102,8 +102,8 @@ FocusScope {
         }
         var def = []
         for (var j = 0; j < count; j++) def.push(j)
-        collectionOrder = def
-        api.memory.set("collectionOrder", def)
+            collectionOrder = def
+            api.memory.set("collectionOrder", def)
     }
 
     function _loadBackgroundStyle() {
@@ -111,8 +111,40 @@ FocusScope {
         if (saved === "hills" || saved === "background" || saved === "screenshot" ||
             saved === "ps-symbols" || saved === "firefly" || saved === "pegasus")
             root.backgroundStyle = saved
-        else
-            root.backgroundStyle = "background"
+            else
+                root.backgroundStyle = "background"
+    }
+
+    function getWaveColors(baseColor, isDark) {
+        if (themeManager.accentColorName === "default") {
+            if (isDark) return ["#525252", "#383838", "#242424"]
+                else return ["#C0C0C0", "#A0A0A0", "#808080"]
+        }
+        if (isDark) {
+            return [
+                Qt.lighter(baseColor, 1.4),
+                baseColor,
+                Qt.darker(baseColor, 1.4)
+            ]
+        } else {
+            return [
+                Qt.lighter(baseColor, 1.2),
+                baseColor,
+                Qt.darker(baseColor, 1.2)
+            ]
+        }
+    }
+
+    property var _waveColors: getWaveColors(themeManager.accentColorValue, themeManager.currentTheme === "dark")
+
+    Connections {
+        target: themeManager
+        function onAccentColorChanged() {
+            _waveColors = getWaveColors(themeManager.accentColorValue, themeManager.currentTheme === "dark")
+        }
+        function onThemeChanged() {
+            _waveColors = getWaveColors(themeManager.accentColorValue, themeManager.currentTheme === "dark")
+        }
     }
 
     function _findCollectionIndex(realIdx, virtualType) {
@@ -121,8 +153,8 @@ FocusScope {
             var e = list[i]
             if (realIdx >= 0 && !e.isVirtual && e.realIndex === realIdx)
                 return i
-            if (virtualType !== "" && e.isVirtual && e.virtualType === virtualType)
-                return i
+                if (virtualType !== "" && e.isVirtual && e.virtualType === virtualType)
+                    return i
         }
         return 0
     }
@@ -143,12 +175,12 @@ FocusScope {
     function _findGameIndexByTitle(title) {
         var model = root.activeGameModel
         if (!model || !title) return -1
-        var count = model.count !== undefined ? model.count : (model.length || 0)
-        for (var i = 0; i < count; i++) {
-            var g = model.get ? model.get(i) : model[i]
-            if (g && g.title === title) return i
-        }
-        return -1
+            var count = model.count !== undefined ? model.count : (model.length || 0)
+            for (var i = 0; i < count; i++) {
+                var g = model.get ? model.get(i) : model[i]
+                if (g && g.title === title) return i
+            }
+            return -1
     }
 
     Component.onCompleted: {
@@ -162,23 +194,23 @@ FocusScope {
         //console.log("[theme] onCompleted — savedCol:", savedCol, "savedGame:", savedGame, "savedTitle:", savedTitle, "savedMode:", savedMode)
         if (savedCol !== undefined && fullCollectionList.length > 0)
             currentCollectionIndex = Math.max(0, Math.min(savedCol, fullCollectionList.length - 1))
-        if (savedMode !== undefined) viewMode = savedMode
-        if (savedTitle !== undefined && savedTitle !== "") {
-            Qt.callLater(function() {
-                var idx = _findGameIndexByTitle(savedTitle)
-                //console.log("[theme] restore by title:", savedTitle, "-> index:", idx)
-                currentGameIndex = (idx >= 0) ? idx : 0
-            })
-        } else if (savedGame !== undefined) {
-            currentGameIndex = savedGame
-        }
-        if (savedCol !== undefined || savedGame !== undefined || savedTitle !== undefined) {
-            //console.log("[theme] came from game — starting clearStateTimer")
-            clearStateTimer.start()
-        } else {
-            //console.log("[theme] normal startup — no saved indices to clear")
-        }
-        root.forceActiveFocus()
+            if (savedMode !== undefined) viewMode = savedMode
+                if (savedTitle !== undefined && savedTitle !== "") {
+                    Qt.callLater(function() {
+                        var idx = _findGameIndexByTitle(savedTitle)
+                        //console.log("[theme] restore by title:", savedTitle, "-> index:", idx)
+                        currentGameIndex = (idx >= 0) ? idx : 0
+                    })
+                } else if (savedGame !== undefined) {
+                    currentGameIndex = savedGame
+                }
+                if (savedCol !== undefined || savedGame !== undefined || savedTitle !== undefined) {
+                    //console.log("[theme] came from game — starting clearStateTimer")
+                    clearStateTimer.start()
+                } else {
+                    //console.log("[theme] normal startup — no saved indices to clear")
+                }
+                root.forceActiveFocus()
     }
 
     function persistState() {
@@ -208,19 +240,19 @@ FocusScope {
 
     function _refocusActiveView() {
         if (configOpen || contextMenuOpen || searchActive) return
-        var loaders = [listViewLoader, gridViewLoader, bubblesLoader, detailListLoader]
-        var l = loaders[viewMode]
-        if (l && l.item) l.item.forceActiveFocus()
-        else root.forceActiveFocus()
+            var loaders = [listViewLoader, gridViewLoader, bubblesLoader, detailListLoader]
+            var l = loaders[viewMode]
+            if (l && l.item) l.item.forceActiveFocus()
+                else root.forceActiveFocus()
     }
 
     function _giveViewFocusFromSearch(resetToIndex0) {
         if (configOpen || contextMenuOpen) return
-        if (resetToIndex0) root.currentGameIndex = 0
-        var loaders = [listViewLoader, gridViewLoader, bubblesLoader, detailListLoader]
-        var l = loaders[viewMode]
-        if (l && l.item) l.item.forceActiveFocus()
-        else root.forceActiveFocus()
+            if (resetToIndex0) root.currentGameIndex = 0
+                var loaders = [listViewLoader, gridViewLoader, bubblesLoader, detailListLoader]
+                var l = loaders[viewMode]
+                if (l && l.item) l.item.forceActiveFocus()
+                    else root.forceActiveFocus()
     }
 
     function goNextCollection() {
@@ -273,21 +305,21 @@ FocusScope {
 
         property var currentGame: {
             var model = (root.searchActive && root.searchText.trim() !== "")
-                ? root.searchResultModel
-                : root.activeGameModel
+            ? root.searchResultModel
+            : root.activeGameModel
             if (!model) return null
-            if (model.get) return model.get(root.currentGameIndex)
-            var arr = model
-            return (arr && arr.length) ? arr[root.currentGameIndex] : null
+                if (model.get) return model.get(root.currentGameIndex)
+                    var arr = model
+                    return (arr && arr.length) ? arr[root.currentGameIndex] : null
         }
 
         readonly property string _resolvedSrc: {
             var game = currentGame
             if (!game) return ""
-            if (_isShaderMode) return ""
-            if (root.backgroundStyle === "screenshot")
-                return game.assets.screenshot || ""
-            return game.assets.background || game.assets.screenshot || ""
+                if (_isShaderMode) return ""
+                    if (root.backgroundStyle === "screenshot")
+                        return game.assets.screenshot || ""
+                        return game.assets.background || game.assets.screenshot || ""
         }
 
         readonly property bool _isShaderMode: {
@@ -344,8 +376,62 @@ FocusScope {
                 }
             }
 
+            onLoaded: {
+                if (root.backgroundStyle === "hills" && item) {
+                    item.waveColor1 = _waveColors[0]
+                    item.waveColor2 = _waveColors[1]
+                    item.waveColor3 = _waveColors[2]
+                    var isDefault = themeManager.accentColorName === "default"
+                    item.waveOpacity1 = isDefault ? 1.0 : 0.15
+                    item.waveOpacity2 = isDefault ? 1.0 : 0.25
+                    item.waveOpacity3 = isDefault ? 1.0 : 0.35
+                }
+                if (root.backgroundStyle === "ps-symbols" && item) {
+                    item.accentColor = themeManager.effectiveAccentColor
+                }
+                if (root.backgroundStyle === "firefly" && item) {
+                    item.accentColor = themeManager.effectiveAccentColor
+                }
+                if (root.backgroundStyle === "pegasus" && item) {
+                    item.accentColor = themeManager.effectiveAccentColor
+                }
+            }
+
             opacity: active && item ? 1.0 : 0.0
             Behavior on opacity { NumberAnimation { duration: 300 } }
+        }
+
+        Connections {
+            target: themeManager
+            function onEffectiveAccentColorChanged() {
+                if (shaderLoader.item) {
+                    if (root.backgroundStyle === "ps-symbols") {
+                        shaderLoader.item.accentColor = themeManager.effectiveAccentColor
+                    }
+                    if (root.backgroundStyle === "firefly") {
+                        shaderLoader.item.accentColor = themeManager.effectiveAccentColor
+                    }
+                    if (root.backgroundStyle === "pegasus") {
+                        shaderLoader.item.accentColor = themeManager.effectiveAccentColor
+                    }
+                }
+            }
+        }
+
+        Connections {
+            target: root
+            ignoreUnknownSignals: true
+            function on_WaveColorsChanged() {
+                if (shaderLoader.item && root.backgroundStyle === "hills") {
+                    shaderLoader.item.waveColor1 = _waveColors[0]
+                    shaderLoader.item.waveColor2 = _waveColors[1]
+                    shaderLoader.item.waveColor3 = _waveColors[2]
+                    var isDefault = themeManager.accentColorName === "default"
+                    shaderLoader.item.waveOpacity1 = isDefault ? 1.0 : 0.15
+                    shaderLoader.item.waveOpacity2 = isDefault ? 1.0 : 0.25
+                    shaderLoader.item.waveOpacity3 = isDefault ? 1.0 : 0.35
+                }
+            }
         }
 
         Timer {
@@ -428,8 +514,8 @@ FocusScope {
             anchors.fill: parent
             color: themeManager.currentTheme === "dark" ? "#0D0D0D" : "#E8ECEF"
             opacity: bgArea._isShaderMode
-                ? 0.0
-                : (themeManager.currentTheme === "dark" ? 0.7 : 0.05)
+            ? 0.0
+            : (themeManager.currentTheme === "dark" ? 0.7 : 0.05)
             Behavior on opacity { NumberAnimation { duration: 300 } }
         }
 
@@ -458,32 +544,71 @@ FocusScope {
     Item {
         id: statusBar
         z: 2
-        anchors { top: parent.top; right: parent.right; rightMargin: vpx(16) }
+        anchors { top: parent.top; right: parent.right; rightMargin: vpx(32); topMargin: vpx(10) }
         height: vpx(56)
         width: vpx(160)
 
         Row {
             anchors { right: parent.right; verticalCenter: parent.verticalCenter }
             spacing: vpx(12)
-            Text {
-                text: {
-                    if (isNaN(api.device.batteryPercent)) return "AC-POWER ⚡"
-                    var pct = Math.round(api.device.batteryPercent * 100)
-                    return (api.device.batteryCharging ? "⚡ " : "") + pct + "%"
-                }
-                color: themeManager.color("textSecondary")
-                font { family: global.fonts.sans; pixelSize: vpx(18) }
-            }
+
             Text {
                 id: clockLabel
                 color: themeManager.color("textSecondary")
-                font { family: global.fonts.sans; pixelSize: vpx(18) }
+                font { family: global.fonts.sans; pixelSize: vpx(28) }
                 Timer {
                     interval: 30000
                     running: true
                     repeat: true
                     triggeredOnStart: true
                     onTriggered: clockLabel.text = Qt.formatTime(new Date(), "hh:mm")
+                }
+            }
+
+            Text {
+                text: "•"
+                color: themeManager.color("textSecondary")
+                font { family: global.fonts.sans; pixelSize: vpx(18) }
+                anchors.verticalCenter: parent.verticalCenter
+            }
+
+            Item {
+                id: batteryStatus
+                width:  hasBattery ? vpx(32) : acPowerLabel.width
+                height: vpx(32)
+                anchors.verticalCenter: parent.verticalCenter
+
+                readonly property bool hasBattery: !isNaN(api.device.batteryPercent)
+                readonly property int   batteryPct: hasBattery ? Math.round(api.device.batteryPercent * 100) : 0
+
+                readonly property string batteryIcon: {
+                    if (!hasBattery) return ""
+                        if (api.device.batteryCharging)  return "assets/icon/battery-charging-full.svg"
+                            if (batteryPct >= 97)            return "assets/icon/battery-full.svg"
+                                if (batteryPct <= 3)             return "assets/icon/battery-alert.svg"
+                                    var lvl = Math.min(6, Math.floor(batteryPct / 14))
+                                    return "assets/icon/" + lvl + ".svg"
+                }
+
+                Image {
+                    anchors.fill: parent
+                    source: batteryStatus.hasBattery ? batteryStatus.batteryIcon : ""
+                    visible: batteryStatus.hasBattery
+                    fillMode: Image.PreserveAspectFit
+                    smooth: true
+                    layer.enabled: true
+                    layer.effect: ColorOverlay {
+                        color: themeManager.color("textSecondary")
+                    }
+                }
+
+                Text {
+                    id: acPowerLabel
+                    visible: !batteryStatus.hasBattery
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: "AC-POWER ⚡"
+                    color: themeManager.color("textSecondary")
+                    font { family: global.fonts.sans; pixelSize: vpx(28) }
                 }
             }
         }
@@ -681,16 +806,17 @@ FocusScope {
                         var game = null
                         if (model) {
                             if (model.get) game = model.get(root.currentGameIndex)
-                            else if (model.length) game = model[root.currentGameIndex]
+                                else if (model.length) game = model[root.currentGameIndex]
                         }
                         if (game) globalContextMenu.open(game)
                     }
                 }
             }
             Rectangle {
-                width: vpx(1)
-                height: vpx(20)
-                color: themeManager.color("border")
+                width: vpx(5)
+                height: vpx(5)
+                radius: width / 2
+                color: themeManager.color("iconPrimary")
                 anchors.verticalCenter: parent.verticalCenter
             }
 
@@ -760,8 +886,8 @@ FocusScope {
                     onClicked: {
                         if (root.searchActive)
                             root.closeSearch()
-                        else
-                            root.openSearch()
+                            else
+                                root.openSearch()
                     }
                 }
             }
@@ -865,14 +991,18 @@ FocusScope {
                 fillMode: Image.PreserveAspectFit
                 mipmap: true
                 layer.enabled: true
-                layer.effect: ColorOverlay { color: themeManager.color("iconPrimary") }
+                layer.effect: ColorOverlay {
+                    color: themeManager.effectiveAccentColor
+                }
             }
 
             Text {
                 anchors.verticalCenter: parent.verticalCenter
                 width: parent.width - (favoriteIcon.visible ? favoriteIcon.width + parent.spacing : 0)
                 text: listGameTitle.selGame ? listGameTitle.selGame.title : ""
-                color: themeManager.color("textPrimary")
+                color: themeManager.accentColorName === "default"
+                ? themeManager.color("textPrimary")
+                : themeManager.accentColorValue
                 font { family: global.fonts.sans; pixelSize: vpx(28); bold: true }
                 elide: Text.ElideRight
             }
@@ -928,9 +1058,9 @@ FocusScope {
                     Text {
                         text: {
                             if (!listMetaRow.selGame || listMetaRow.selGame.releaseYear === 0) return ""
-                            var d = listMetaRow.selGame.release
-                            if (d && !isNaN(d.getTime())) return Qt.formatDate(d, "MMM d, yyyy")
-                            return listMetaRow.selGame.releaseYear.toString()
+                                var d = listMetaRow.selGame.release
+                                if (d && !isNaN(d.getTime())) return Qt.formatDate(d, "MMM d, yyyy")
+                                    return listMetaRow.selGame.releaseYear.toString()
                         }
                         color: themeManager.color("textPrimary")
                         font { family: global.fonts.sans; pixelSize: vpx(22); bold: true }
@@ -1048,6 +1178,8 @@ FocusScope {
         }
     }
 
+
+
     Connections {
         target: settingsLoader.item
 
@@ -1085,10 +1217,10 @@ FocusScope {
             if (saved && Array.isArray(saved) && saved.length === api.collections.count)
                 root.collectionOrder = saved.slice()
 
-            Qt.callLater(function() {
-                var idx = root._findCollectionIndex(curRealIdx, curVirtType)
-                root.currentCollectionIndex = idx
-            })
+                Qt.callLater(function() {
+                    var idx = root._findCollectionIndex(curRealIdx, curVirtType)
+                    root.currentCollectionIndex = idx
+                })
         }
 
         function onClosed() {
@@ -1152,8 +1284,8 @@ FocusScope {
         onFocusRestoreRequested: {
             if (root._activeViewItem && typeof root._activeViewItem.restoreFocus === "function")
                 root._activeViewItem.restoreFocus()
-            else
-                root._refocusActiveView()
+                else
+                    root._refocusActiveView()
         }
     }
 }
