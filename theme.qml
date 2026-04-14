@@ -1040,7 +1040,7 @@ FocusScope {
                 bottomMargin: vpx(14)
             }
             spacing: vpx(20)
-            FooterButton { buttonText: "B"; labelText: "Back" }
+            FooterButton { buttonText: "B"; labelText: "Exit" }
             FooterButton { buttonText: "Y"; labelText: "Configuration"; onClicked: root.openSettings() }
             FooterButton {
                 buttonText: "X"
