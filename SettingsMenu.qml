@@ -77,6 +77,7 @@ FocusScope {
         prefViewMenu.close()
         themeMenu.close()
         bgStyleMenu.close()
+        fontsMenu.close()
         sectionList.forceActiveFocus()
     }
 
@@ -133,7 +134,7 @@ FocusScope {
                 Text {
                     text: "Pegasus Beacon Lite"
                     color: themeManager.color("textPrimary")
-                    font { family: global.fonts.sans; pixelSize: vpx(24); bold: true }
+                    font { family: fontManager.currentFont; pixelSize: vpx(24); bold: true }
                     anchors.verticalCenter: parent.verticalCenter
                 }
             }
@@ -142,7 +143,7 @@ FocusScope {
                 anchors { horizontalCenter: parent.horizontalCenter; verticalCenter: parent.verticalCenter }
                 text: root.sections[root.currentSection].label
                 color: themeManager.color("textTertiary")
-                font { family: global.fonts.sans; pixelSize: vpx(18) }
+                font { family: fontManager.currentFont; pixelSize: vpx(18) }
             }
 
             Row {
@@ -165,7 +166,7 @@ FocusScope {
                 Text {
                     text: "Close"
                     color: themeManager.color("textSecondary")
-                    font { family: global.fonts.sans; pixelSize: vpx(20) }
+                    font { family: fontManager.currentFont; pixelSize: vpx(20) }
                     anchors.verticalCenter: parent.verticalCenter
                 }
             }
@@ -295,7 +296,7 @@ FocusScope {
                             Text {
                                 text: sec.label
                                 color: sectionRow.isCurrent ? themeManager.color("textPrimary") : themeManager.color("textTertiary")
-                                font { family: global.fonts.sans; pixelSize: vpx(32); bold: sectionRow.isCurrent }
+                                font { family: fontManager.currentFont; pixelSize: vpx(32); bold: sectionRow.isCurrent }
                                 Behavior on color { ColorAnimation { duration: 140 } }
                             }
                             Text {
@@ -307,7 +308,7 @@ FocusScope {
                                                     return sec.hasContent ? "Settings" : "Coming soon"
                                 }
                                 color: sectionRow.isCurrent ? themeManager.color("textSecondary") : themeManager.color("textDisabled")
-                                font { family: global.fonts.sans; pixelSize: vpx(22) }
+                                font { family: fontManager.currentFont; pixelSize: vpx(22) }
                                 Behavior on color { ColorAnimation { duration: 140 } }
                             }
                         }
@@ -388,7 +389,7 @@ FocusScope {
                             anchors.horizontalCenter: parent.horizontalCenter
                             text: "Nothing here, continue on your way..."
                             color: themeManager.color("textDisabled")
-                            font { family: global.fonts.sans; pixelSize: vpx(20) }
+                            font { family: fontManager.currentFont; pixelSize: vpx(20) }
                         }
                         Text {
                             anchors.horizontalCenter: parent.horizontalCenter
@@ -408,7 +409,8 @@ FocusScope {
                         "assets/icon/gallery.svg",
                         "assets/icon/gridview.svg",
                         "assets/icon/bulles.svg",
-                        "assets/icon/listview.svg"
+                        "assets/icon/listview.svg",
+                        "assets/icon/video.svg"
                     ]
 
                     readonly property var _modeNames: ["Gallery", "Grid", "Bubbles", "List"]
@@ -419,11 +421,39 @@ FocusScope {
                         "firefly": "Firefly",
                         "pegasus": "Pegasus-fe",
                         "background": "Background",
-                        "screenshot": "Screenshot"
+                        "screenshot": "Screenshot",
+                        "video": "Video"
                     })
 
                     property string selectedItem: "gameview"
                     property bool panelFocused: root.rightFocused && root.sections[root.currentSection].id === "preferences"
+
+                    onSelectedItemChanged: {
+                        if (selectedItem === "gameview") {
+                            prefFlick.contentY = 0
+                            return
+                        }
+
+                        var target = null
+                        if      (selectedItem === "theme")      target = themeRow
+                            else if (selectedItem === "bgstyle")    target = bgStyleRow
+                                else if (selectedItem === "themecolor") target = themeColorRow
+                                    else if (selectedItem === "font")       target = fontsRow
+
+                                        if (!target) return
+
+                                            var itemY = target.mapToItem(prefFlick.contentItem, 0, 0).y
+                                            var itemBottom = itemY + target.height
+                                            var margin = vpx(20)
+
+                                            if (itemBottom + margin > prefFlick.contentY + prefFlick.height)
+                                                prefFlick.contentY = Math.min(
+                                                    itemBottom + margin - prefFlick.height,
+                                                    prefFlick.contentHeight - prefFlick.height
+                                                )
+                                                else if (itemY - margin < prefFlick.contentY)
+                                                    prefFlick.contentY = Math.max(0, itemY - margin)
+                    }
 
                     focus: panelFocused
 
@@ -435,6 +465,8 @@ FocusScope {
                                 selectedItem = "theme"
                                 else if (selectedItem === "themecolor")
                                     selectedItem = "bgstyle"
+                                    else if (selectedItem === "font")
+                                        selectedItem = "themecolor"
                     }
                     Keys.onDownPressed: {
                         event.accepted = true
@@ -444,6 +476,8 @@ FocusScope {
                                 selectedItem = "bgstyle"
                                 else if (selectedItem === "bgstyle")
                                     selectedItem = "themecolor"
+                                    else if (selectedItem === "themecolor")
+                                        selectedItem = "font"
                     }
 
                     Keys.onPressed: {
@@ -456,411 +490,655 @@ FocusScope {
                             event.accepted = true
                             if (selectedItem === "gameview")
                                 prefViewMenu.toggle()
-                            else if (selectedItem === "theme")
-                                   themeMenu.toggle()
-                            else if (selectedItem === "bgstyle")
-                                   bgStyleMenu.toggle()
-                            else if (selectedItem === "themecolor")
-                                   themeColorMenu.toggle()
-                            return
+                                else if (selectedItem === "theme")
+                                    themeMenu.toggle()
+                                    else if (selectedItem === "bgstyle")
+                                        bgStyleMenu.toggle()
+                                        else if (selectedItem === "themecolor")
+                                            themeColorMenu.toggle()
+                                            else if (selectedItem === "font")
+                                                fontsMenu.toggle()
+                                                return
                         }
                     }
 
-                    Column {
-                        anchors {
-                            top: parent.top
-                            topMargin: vpx(28)
-                            left: parent.left
-                            leftMargin: vpx(28)
-                            right: parent.right
-                            rightMargin: vpx(28)
-                        }
-                        spacing: vpx(8)
+                    Flickable {
+                        id: prefFlick
+                        anchors.fill: parent
+                        contentHeight: prefColumn.height + vpx(56)
+                        clip: true
+                        boundsBehavior: Flickable.StopAtBounds
+                        interactive: true
 
-                        Text {
-                            text: "Game view"
-                            color: themeManager.color("textSecondary")
-                            font { family: global.fonts.sans; pixelSize: vpx(22) }
-                            leftPadding: vpx(4)
-                        }
+                        Column {
+                            id: prefColumn
+                            x: vpx(28)
+                            y: vpx(28)
+                            width: prefFlick.width - vpx(56)
+                            spacing: vpx(8)
 
-                        Rectangle {
-                            id: viewModeRow
-                            width: parent.width
-                            height: vpx(80)
-                            radius: vpx(10)
-                            property bool isSelected: preferencesPanel.selectedItem === "gameview" && preferencesPanel.panelFocused
-                            color: isSelected ? themeManager.color("surfaceSelected") : themeManager.color("surface")
-                            border {
-                                width: vpx(1)
-                                color: isSelected ? themeManager.color("accent") : themeManager.color("border")
-                            }
-                            Behavior on color { ColorAnimation { duration: 130 } }
-                            Behavior on border.color { ColorAnimation { duration: 130 } }
-
-                            Row {
-                                anchors { left: parent.left; leftMargin: vpx(16); verticalCenter: parent.verticalCenter }
-                                spacing: vpx(14)
-
-                                Image {
-                                    source: preferencesPanel._modeIcons[root.viewMode] || ""
-                                    width: vpx(32)
-                                    height: vpx(32)
-                                    fillMode: Image.PreserveAspectFit
-                                    mipmap: true
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    layer.enabled: true
-                                    layer.effect: ColorOverlay {
-                                        color: viewModeRow.isSelected ? themeManager.color("accent") : themeManager.color("iconSecondary")
-                                    }
-                                }
-
-                                Column {
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    spacing: vpx(3)
-                                    Text {
-                                        text: "Game view mode"
-                                        color: viewModeRow.isSelected ? themeManager.color("textPrimary") : themeManager.color("textSecondary")
-                                        font { family: global.fonts.sans; pixelSize: vpx(28); bold: viewModeRow.isSelected }
-                                        Behavior on color { ColorAnimation { duration: 130 } }
-                                    }
-                                    Text {
-                                        text: preferencesPanel._modeNames[root.viewMode] || "Gallery"
-                                        color: viewModeRow.isSelected ? themeManager.color("textPrimary") : themeManager.color("textTertiary")
-                                        font { family: global.fonts.sans; pixelSize: vpx(20) }
-                                        Behavior on color { ColorAnimation { duration: 130 } }
-                                    }
-                                }
-                            }
-
-                            Image {
-                                anchors { right: parent.right; rightMargin: vpx(16); verticalCenter: parent.verticalCenter }
-                                source: "assets/icon/arrow-right.svg"
-                                width: vpx(16)
-                                height: vpx(16)
-                                fillMode: Image.PreserveAspectFit
-                                mipmap: true
-                                layer.enabled: true
-                                layer.effect: ColorOverlay {
-                                    color: viewModeRow.isSelected ? themeManager.color("accent") : themeManager.color("borderLight")
-                                }
-                            }
-
-                            MouseArea {
-                                anchors.fill: parent
-                                onClicked: {
-                                    if (!root.rightFocused) {
-                                        root.rightFocused = true
-                                        preferencesPanel.panelFocused = true
-                                    }
-                                    preferencesPanel.selectedItem = "gameview"
-                                    preferencesPanel.forceActiveFocus()
-                                    prefViewMenu.toggle()
-                                }
-                            }
-                        }
-
-                        Rectangle {
-                            width: parent.width
-                            height: vpx(1)
-                            color: themeManager.color("border")
-                            opacity: 0.5
-                        }
-
-                        Text {
-                            text: "Theme"
-                            color: themeManager.color("textSecondary")
-                            font { family: global.fonts.sans; pixelSize: vpx(22) }
-                            leftPadding: vpx(4)
-                        }
-
-                        Rectangle {
-                            id: themeRow
-                            width: parent.width
-                            height: vpx(80)
-                            radius: vpx(10)
-                            property bool isSelected: preferencesPanel.selectedItem === "theme" && preferencesPanel.panelFocused
-                            color: isSelected ? themeManager.color("surfaceSelected") : themeManager.color("surface")
-                            border {
-                                width: vpx(1)
-                                color: isSelected ? themeManager.color("accent") : themeManager.color("border")
-                            }
-                            Behavior on color { ColorAnimation { duration: 130 } }
-                            Behavior on border.color { ColorAnimation { duration: 130 } }
-
-                            Row {
-                                anchors { left: parent.left; leftMargin: vpx(16); verticalCenter: parent.verticalCenter }
-                                spacing: vpx(14)
-
-                                Image {
-                                    id: themeIcon
-                                    source: "assets/icon/theme.svg"
-                                    width: vpx(32)
-                                    height: vpx(32)
-                                    fillMode: Image.PreserveAspectFit
-                                    mipmap: true
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    layer.enabled: true
-                                    layer.effect: ColorOverlay {
-                                        color: themeRow.isSelected ? themeManager.color("accent") : themeManager.color("iconSecondary")
-                                    }
-                                }
-
-                                Column {
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    spacing: vpx(3)
-                                    Text {
-                                        text: "Theme"
-                                        color: themeRow.isSelected ? themeManager.color("textPrimary") : themeManager.color("textSecondary")
-                                        font { family: global.fonts.sans; pixelSize: vpx(28); bold: themeRow.isSelected }
-                                        Behavior on color { ColorAnimation { duration: 130 } }
-                                    }
-                                    Text {
-                                        text: themeManager.currentTheme === "dark" ? "Dark" : "Light"
-                                        color: themeRow.isSelected ? themeManager.color("textPrimary") : themeManager.color("textTertiary")
-                                        font { family: global.fonts.sans; pixelSize: vpx(20) }
-                                        Behavior on color { ColorAnimation { duration: 130 } }
-                                    }
-                                }
+                            Text {
+                                text: "Game view"
+                                color: themeManager.color("textSecondary")
+                                font { family: fontManager.currentFont; pixelSize: vpx(22) }
+                                leftPadding: vpx(4)
                             }
 
                             Rectangle {
-                                anchors { right: parent.right; rightMargin: vpx(16); verticalCenter: parent.verticalCenter }
-                                width: vpx(80)
-                                height: vpx(36)
-                                radius: vpx(18)
-                                color: themeManager.currentTheme === "dark" ? themeManager.color("surfaceHover") : themeManager.color("borderLight")
-
-                                Text {
-                                    anchors.centerIn: parent
-                                    text: themeManager.currentTheme === "dark" ? "Dark" : "Light"
-                                    color: themeManager.color("textPrimary")
-                                    font { family: global.fonts.sans; pixelSize: vpx(16); bold: true }
+                                id: viewModeRow
+                                width: parent.width
+                                height: vpx(80)
+                                radius: vpx(10)
+                                property bool isSelected: preferencesPanel.selectedItem === "gameview" && preferencesPanel.panelFocused
+                                color: isSelected ? themeManager.color("surfaceSelected") : themeManager.color("surface")
+                                border {
+                                    width: vpx(1)
+                                    color: isSelected ? themeManager.color("accent") : themeManager.color("border")
                                 }
-                            }
+                                Behavior on color { ColorAnimation { duration: 130 } }
+                                Behavior on border.color { ColorAnimation { duration: 130 } }
 
-                            MouseArea {
-                                anchors.fill: parent
-                                onClicked: {
-                                    if (!root.rightFocused) {
-                                        root.rightFocused = true
-                                        preferencesPanel.panelFocused = true
-                                    }
-                                    preferencesPanel.selectedItem = "theme"
-                                    preferencesPanel.forceActiveFocus()
-                                    themeMenu.toggle()
-                                }
-                            }
-                        }
-
-                        Rectangle {
-                            width: parent.width
-                            height: vpx(1)
-                            color: themeManager.color("border")
-                            opacity: 0.5
-                        }
-
-                        Text {
-                            text: "Background Style"
-                            color: themeManager.color("textSecondary")
-                            font { family: global.fonts.sans; pixelSize: vpx(22) }
-                            leftPadding: vpx(4)
-                        }
-
-                        Rectangle {
-                            id: bgStyleRow
-                            width: parent.width
-                            height: vpx(80)
-                            radius: vpx(10)
-                            property bool isSelected: preferencesPanel.selectedItem === "bgstyle" && preferencesPanel.panelFocused
-                            color: isSelected ? themeManager.color("surfaceSelected") : themeManager.color("surface")
-                            border {
-                                width: vpx(1)
-                                color: isSelected ? themeManager.color("accent") : themeManager.color("border")
-                            }
-                            Behavior on color { ColorAnimation { duration: 130 } }
-                            Behavior on border.color { ColorAnimation { duration: 130 } }
-
-                            Row {
-                                anchors { left: parent.left; leftMargin: vpx(16); verticalCenter: parent.verticalCenter }
-                                spacing: vpx(14)
-
-                                Image {
-                                    source: "assets/icon/background.svg"
-                                    width: vpx(32)
-                                    height: vpx(32)
-                                    fillMode: Image.PreserveAspectFit
-                                    mipmap: true
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    layer.enabled: true
-                                    layer.effect: ColorOverlay {
-                                        color: bgStyleRow.isSelected ? themeManager.color("accent") : themeManager.color("iconSecondary")
-                                    }
-                                }
-
-                                Column {
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    spacing: vpx(3)
-                                    Text {
-                                        text: "Background Style"
-                                        color: bgStyleRow.isSelected ? themeManager.color("textPrimary") : themeManager.color("textSecondary")
-                                        font { family: global.fonts.sans; pixelSize: vpx(28); bold: bgStyleRow.isSelected }
-                                        Behavior on color { ColorAnimation { duration: 130 } }
-                                    }
-                                    Text {
-                                        text: preferencesPanel._bgStyleLabels[root.backgroundStyle] || "Background"
-                                        color: bgStyleRow.isSelected ? themeManager.color("textPrimary") : themeManager.color("textTertiary")
-                                        font { family: global.fonts.sans; pixelSize: vpx(20) }
-                                        Behavior on color { ColorAnimation { duration: 130 } }
-                                    }
-                                }
-                            }
-
-                            Rectangle {
-                                anchors { right: parent.right; rightMargin: vpx(16); verticalCenter: parent.verticalCenter }
-                                width: vpx(110)
-                                height: vpx(36)
-                                radius: vpx(18)
-                                color: themeManager.color("surfaceHover")
-
-                                Text {
-                                    anchors.centerIn: parent
-                                    text: preferencesPanel._bgStyleLabels[root.backgroundStyle] || "Background"
-                                    color: themeManager.color("textPrimary")
-                                    font { family: global.fonts.sans; pixelSize: vpx(16); bold: true }
-                                }
-                            }
-
-                            MouseArea {
-                                anchors.fill: parent
-                                onClicked: {
-                                    if (!root.rightFocused) {
-                                        root.rightFocused = true
-                                        preferencesPanel.panelFocused = true
-                                    }
-                                    preferencesPanel.selectedItem = "bgstyle"
-                                    preferencesPanel.forceActiveFocus()
-                                    bgStyleMenu.toggle()
-                                }
-                            }
-                        }
-
-                        Rectangle {
-                            width: parent.width
-                            height: vpx(1)
-                            color: themeManager.color("border")
-                            opacity: 0.5
-                        }
-
-                        Text {
-                            text: "Theme Color"
-                            color: themeManager.color("textSecondary")
-                            font { family: global.fonts.sans; pixelSize: vpx(22) }
-                            leftPadding: vpx(4)
-                        }
-
-                        Rectangle {
-                            id: themeColorRow
-                            width: parent.width
-                            height: vpx(80)
-                            radius: vpx(10)
-                            property bool isSelected: preferencesPanel.selectedItem === "themecolor" && preferencesPanel.panelFocused
-                            color: isSelected ? themeManager.color("surfaceSelected") : themeManager.color("surface")
-                            border {
-                                width: vpx(1)
-                                color: isSelected ? themeManager.color("accent") : themeManager.color("border")
-                            }
-                            Behavior on color { ColorAnimation { duration: 130 } }
-                            Behavior on border.color { ColorAnimation { duration: 130 } }
-
-                            Row {
-                                anchors { left: parent.left; leftMargin: vpx(16); verticalCenter: parent.verticalCenter }
-                                spacing: vpx(14)
-
-                                Item {
-                                    width: vpx(32)
-                                    height: vpx(32)
-                                    anchors.verticalCenter: parent.verticalCenter
-
-                                    Rectangle {
-                                        anchors.fill: parent
-                                        radius: vpx(6)
-                                        border.width: vpx(1)
-                                        border.color: themeManager.color("borderLight")
-                                        color: "transparent"
-                                    }
+                                Row {
+                                    anchors { left: parent.left; leftMargin: vpx(16); verticalCenter: parent.verticalCenter }
+                                    spacing: vpx(14)
 
                                     Image {
-                                        id: dropIcon
-                                        anchors.centerIn: parent
-                                        width: vpx(24)
-                                        height: vpx(24)
-                                        source: "assets/icon/drop.svg"
-                                        sourceSize: Qt.size(width, height)
+                                        source: preferencesPanel._modeIcons[root.viewMode] || ""
+                                        width: vpx(32)
+                                        height: vpx(32)
                                         fillMode: Image.PreserveAspectFit
-                                        visible: false
+                                        mipmap: true
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        layer.enabled: true
+                                        layer.effect: ColorOverlay {
+                                            color: viewModeRow.isSelected ? themeManager.color("accent") : themeManager.color("iconSecondary")
+                                        }
                                     }
 
-                                    ColorOverlay {
-                                        anchors.fill: dropIcon
-                                        source: dropIcon
-                                        color: themeManager.accentColorValue
+                                    Column {
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        spacing: vpx(3)
+                                        Text {
+                                            text: "Game view mode"
+                                            color: viewModeRow.isSelected ? themeManager.color("textPrimary") : themeManager.color("textSecondary")
+                                            font { family: fontManager.currentFont; pixelSize: vpx(28); bold: viewModeRow.isSelected }
+                                            Behavior on color { ColorAnimation { duration: 130 } }
+                                        }
+                                        Text {
+                                            text: preferencesPanel._modeNames[root.viewMode] || "Gallery"
+                                            color: viewModeRow.isSelected ? themeManager.color("textPrimary") : themeManager.color("textTertiary")
+                                            font { family: fontManager.currentFont; pixelSize: vpx(20) }
+                                            Behavior on color { ColorAnimation { duration: 130 } }
+                                        }
                                     }
                                 }
 
-                                Column {
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    spacing: vpx(3)
-                                    Text {
-                                        text: "Theme Color"
-                                        color: themeColorRow.isSelected ? themeManager.color("textPrimary") : themeManager.color("textSecondary")
-                                        font { family: global.fonts.sans; pixelSize: vpx(28); bold: themeColorRow.isSelected }
-                                        Behavior on color { ColorAnimation { duration: 130 } }
+                                Image {
+                                    anchors { right: parent.right; rightMargin: vpx(16); verticalCenter: parent.verticalCenter }
+                                    source: "assets/icon/arrow-right.svg"
+                                    width: vpx(16)
+                                    height: vpx(16)
+                                    fillMode: Image.PreserveAspectFit
+                                    mipmap: true
+                                    layer.enabled: true
+                                    layer.effect: ColorOverlay {
+                                        color: viewModeRow.isSelected ? themeManager.color("accent") : themeManager.color("borderLight")
                                     }
+                                }
+
+                                MouseArea {
+                                    anchors.fill: parent
+                                    onClicked: {
+                                        if (!root.rightFocused) {
+                                            root.rightFocused = true
+                                            preferencesPanel.panelFocused = true
+                                        }
+                                        preferencesPanel.selectedItem = "gameview"
+                                        preferencesPanel.forceActiveFocus()
+                                        prefViewMenu.toggle()
+                                    }
+                                }
+                            }
+
+                            Rectangle {
+                                width: parent.width
+                                height: vpx(1)
+                                color: themeManager.color("border")
+                                opacity: 0.5
+                            }
+
+                            Text {
+                                text: "Theme"
+                                color: themeManager.color("textSecondary")
+                                font { family: fontManager.currentFont; pixelSize: vpx(22) }
+                                leftPadding: vpx(4)
+                            }
+
+                            Rectangle {
+                                id: themeRow
+                                width: parent.width
+                                height: vpx(80)
+                                radius: vpx(10)
+                                property bool isSelected: preferencesPanel.selectedItem === "theme" && preferencesPanel.panelFocused
+                                color: isSelected ? themeManager.color("surfaceSelected") : themeManager.color("surface")
+                                border {
+                                    width: vpx(1)
+                                    color: isSelected ? themeManager.color("accent") : themeManager.color("border")
+                                }
+                                Behavior on color { ColorAnimation { duration: 130 } }
+                                Behavior on border.color { ColorAnimation { duration: 130 } }
+
+                                Row {
+                                    anchors { left: parent.left; leftMargin: vpx(16); verticalCenter: parent.verticalCenter }
+                                    spacing: vpx(14)
+
+                                    Image {
+                                        id: themeIcon
+                                        source: "assets/icon/theme.svg"
+                                        width: vpx(32)
+                                        height: vpx(32)
+                                        fillMode: Image.PreserveAspectFit
+                                        mipmap: true
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        layer.enabled: true
+                                        layer.effect: ColorOverlay {
+                                            color: themeRow.isSelected ? themeManager.color("accent") : themeManager.color("iconSecondary")
+                                        }
+                                    }
+
+                                    Column {
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        spacing: vpx(3)
+                                        Text {
+                                            text: "Theme"
+                                            color: themeRow.isSelected ? themeManager.color("textPrimary") : themeManager.color("textSecondary")
+                                            font { family: fontManager.currentFont; pixelSize: vpx(28); bold: themeRow.isSelected }
+                                            Behavior on color { ColorAnimation { duration: 130 } }
+                                        }
+                                        Text {
+                                            text: themeManager.currentTheme === "dark" ? "Dark" : "Light"
+                                            color: themeRow.isSelected ? themeManager.color("textPrimary") : themeManager.color("textTertiary")
+                                            font { family: fontManager.currentFont; pixelSize: vpx(20) }
+                                            Behavior on color { ColorAnimation { duration: 130 } }
+                                        }
+                                    }
+                                }
+
+                                Rectangle {
+                                    anchors { right: parent.right; rightMargin: vpx(16); verticalCenter: parent.verticalCenter }
+                                    width: vpx(80)
+                                    height: vpx(36)
+                                    radius: vpx(18)
+                                    color: themeManager.currentTheme === "dark" ? themeManager.color("surfaceHover") : themeManager.color("borderLight")
+
                                     Text {
+                                        anchors.centerIn: parent
+                                        text: themeManager.currentTheme === "dark" ? "Dark" : "Light"
+                                        color: themeManager.color("textPrimary")
+                                        font { family: fontManager.currentFont; pixelSize: vpx(16); bold: true }
+                                    }
+                                }
+
+                                MouseArea {
+                                    anchors.fill: parent
+                                    onClicked: {
+                                        if (!root.rightFocused) {
+                                            root.rightFocused = true
+                                            preferencesPanel.panelFocused = true
+                                        }
+                                        preferencesPanel.selectedItem = "theme"
+                                        preferencesPanel.forceActiveFocus()
+                                        themeMenu.toggle()
+                                    }
+                                }
+                            }
+
+                            Rectangle {
+                                width: parent.width
+                                height: vpx(1)
+                                color: themeManager.color("border")
+                                opacity: 0.5
+                            }
+
+                            Text {
+                                text: "Background Style"
+                                color: themeManager.color("textSecondary")
+                                font { family: fontManager.currentFont; pixelSize: vpx(22) }
+                                leftPadding: vpx(4)
+                            }
+
+                            Rectangle {
+                                id: bgStyleRow
+                                width: parent.width
+                                height: vpx(80)
+                                radius: vpx(10)
+                                property bool isSelected: preferencesPanel.selectedItem === "bgstyle" && preferencesPanel.panelFocused
+                                color: isSelected ? themeManager.color("surfaceSelected") : themeManager.color("surface")
+                                border {
+                                    width: vpx(1)
+                                    color: isSelected ? themeManager.color("accent") : themeManager.color("border")
+                                }
+                                Behavior on color { ColorAnimation { duration: 130 } }
+                                Behavior on border.color { ColorAnimation { duration: 130 } }
+
+                                Row {
+                                    anchors { left: parent.left; leftMargin: vpx(16); verticalCenter: parent.verticalCenter }
+                                    spacing: vpx(14)
+
+                                    Image {
+                                        source: "assets/icon/background.svg"
+                                        width: vpx(32)
+                                        height: vpx(32)
+                                        fillMode: Image.PreserveAspectFit
+                                        mipmap: true
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        layer.enabled: true
+                                        layer.effect: ColorOverlay {
+                                            color: bgStyleRow.isSelected ? themeManager.color("accent") : themeManager.color("iconSecondary")
+                                        }
+                                    }
+
+                                    Column {
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        spacing: vpx(3)
+                                        Text {
+                                            text: "Background Style"
+                                            color: bgStyleRow.isSelected ? themeManager.color("textPrimary") : themeManager.color("textSecondary")
+                                            font { family: fontManager.currentFont; pixelSize: vpx(28); bold: bgStyleRow.isSelected }
+                                            Behavior on color { ColorAnimation { duration: 130 } }
+                                        }
+                                        Text {
+                                            text: preferencesPanel._bgStyleLabels[root.backgroundStyle] || "Background"
+                                            color: bgStyleRow.isSelected ? themeManager.color("textPrimary") : themeManager.color("textTertiary")
+                                            font { family: fontManager.currentFont; pixelSize: vpx(20) }
+                                            Behavior on color { ColorAnimation { duration: 130 } }
+                                        }
+                                    }
+                                }
+
+                                Rectangle {
+                                    anchors { right: parent.right; rightMargin: vpx(16); verticalCenter: parent.verticalCenter }
+                                    width: vpx(110)
+                                    height: vpx(36)
+                                    radius: vpx(18)
+                                    color: themeManager.color("surfaceHover")
+
+                                    Text {
+                                        anchors.centerIn: parent
+                                        text: preferencesPanel._bgStyleLabels[root.backgroundStyle] || "Background"
+                                        color: themeManager.color("textPrimary")
+                                        font { family: fontManager.currentFont; pixelSize: vpx(16); bold: true }
+                                    }
+                                }
+
+                                MouseArea {
+                                    anchors.fill: parent
+                                    onClicked: {
+                                        if (!root.rightFocused) {
+                                            root.rightFocused = true
+                                            preferencesPanel.panelFocused = true
+                                        }
+                                        preferencesPanel.selectedItem = "bgstyle"
+                                        preferencesPanel.forceActiveFocus()
+                                        bgStyleMenu.toggle()
+                                    }
+                                }
+                            }
+
+                            Rectangle {
+                                width: parent.width
+                                height: vpx(1)
+                                color: themeManager.color("border")
+                                opacity: 0.5
+                            }
+
+                            Text {
+                                text: "Theme Color"
+                                color: themeManager.color("textSecondary")
+                                font { family: fontManager.currentFont; pixelSize: vpx(22) }
+                                leftPadding: vpx(4)
+                            }
+
+                            Rectangle {
+                                id: themeColorRow
+                                width: parent.width
+                                height: vpx(80)
+                                radius: vpx(10)
+                                property bool isSelected: preferencesPanel.selectedItem === "themecolor" && preferencesPanel.panelFocused
+                                color: isSelected ? themeManager.color("surfaceSelected") : themeManager.color("surface")
+                                border {
+                                    width: vpx(1)
+                                    color: isSelected ? themeManager.color("accent") : themeManager.color("border")
+                                }
+                                Behavior on color { ColorAnimation { duration: 130 } }
+                                Behavior on border.color { ColorAnimation { duration: 130 } }
+
+                                Row {
+                                    anchors { left: parent.left; leftMargin: vpx(16); verticalCenter: parent.verticalCenter }
+                                    spacing: vpx(14)
+
+                                    Item {
+                                        width: vpx(32)
+                                        height: vpx(32)
+                                        anchors.verticalCenter: parent.verticalCenter
+
+                                        Rectangle {
+                                            anchors.fill: parent
+                                            radius: vpx(6)
+                                            border.width: vpx(1)
+                                            border.color: themeManager.color("borderLight")
+                                            color: "transparent"
+                                        }
+
+                                        Image {
+                                            id: dropIcon
+                                            anchors.centerIn: parent
+                                            width: vpx(24)
+                                            height: vpx(24)
+                                            source: "assets/icon/drop.svg"
+                                            sourceSize: Qt.size(width, height)
+                                            fillMode: Image.PreserveAspectFit
+                                            visible: false
+                                        }
+
+                                        ColorOverlay {
+                                            anchors.fill: dropIcon
+                                            source: dropIcon
+                                            color: themeManager.accentColorValue
+                                        }
+                                    }
+
+                                    Column {
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        spacing: vpx(3)
+                                        Text {
+                                            text: "Theme Color"
+                                            color: themeColorRow.isSelected ? themeManager.color("textPrimary") : themeManager.color("textSecondary")
+                                            font { family: fontManager.currentFont; pixelSize: vpx(28); bold: themeColorRow.isSelected }
+                                            Behavior on color { ColorAnimation { duration: 130 } }
+                                        }
+                                        Text {
+                                            text: {
+                                                var map = { emerald:"Emerald", amber:"Amber", fuchsia:"Fuchsia",
+                                                    skyblue:"Sky Blue", ruby:"Ruby", purple:"Purple", default:"Default" }
+                                                    return map[themeManager.accentColorName] || "Default"
+                                            }
+                                            color: themeColorRow.isSelected ? themeManager.color("textPrimary") : themeManager.color("textTertiary")
+                                            font { family: fontManager.currentFont; pixelSize: vpx(20) }
+                                            Behavior on color { ColorAnimation { duration: 130 } }
+                                        }
+                                    }
+                                }
+
+                                Rectangle {
+                                    anchors { right: parent.right; rightMargin: vpx(16); verticalCenter: parent.verticalCenter }
+                                    width: vpx(110)
+                                    height: vpx(36)
+                                    radius: vpx(18)
+                                    color: themeManager.color("surfaceHover")
+
+                                    Text {
+                                        anchors.centerIn: parent
                                         text: {
                                             var map = { emerald:"Emerald", amber:"Amber", fuchsia:"Fuchsia",
                                                 skyblue:"Sky Blue", ruby:"Ruby", purple:"Purple", default:"Default" }
                                                 return map[themeManager.accentColorName] || "Default"
                                         }
-                                        color: themeColorRow.isSelected ? themeManager.color("textPrimary") : themeManager.color("textTertiary")
-                                        font { family: global.fonts.sans; pixelSize: vpx(20) }
-                                        Behavior on color { ColorAnimation { duration: 130 } }
+                                        color: themeManager.color("textPrimary")
+                                        font { family: fontManager.currentFont; pixelSize: vpx(16); bold: true }
+                                    }
+                                }
+
+                                MouseArea {
+                                    anchors.fill: parent
+                                    onClicked: {
+                                        if (!root.rightFocused) {
+                                            root.rightFocused = true
+                                            preferencesPanel.panelFocused = true
+                                        }
+                                        preferencesPanel.selectedItem = "themecolor"
+                                        preferencesPanel.forceActiveFocus()
+                                        themeColorMenu.toggle()
                                     }
                                 }
                             }
 
                             Rectangle {
-                                anchors { right: parent.right; rightMargin: vpx(16); verticalCenter: parent.verticalCenter }
-                                width: vpx(110)
-                                height: vpx(36)
-                                radius: vpx(18)
-                                color: themeManager.color("surfaceHover")
-
-                                Text {
-                                    anchors.centerIn: parent
-                                    text: {
-                                        var map = { emerald:"Emerald", amber:"Amber", fuchsia:"Fuchsia",
-                                            skyblue:"Sky Blue", ruby:"Ruby", purple:"Purple", default:"Default" }
-                                            return map[themeManager.accentColorName] || "Default"
-                                    }
-                                    color: themeManager.color("textPrimary")
-                                    font { family: global.fonts.sans; pixelSize: vpx(16); bold: true }
-                                }
+                                width: parent.width
+                                height: vpx(1)
+                                color: themeManager.color("border")
+                                opacity: 0.5
                             }
 
-                            MouseArea {
-                                anchors.fill: parent
-                                onClicked: {
-                                    if (!root.rightFocused) {
-                                        root.rightFocused = true
-                                        preferencesPanel.panelFocused = true
+                            Text {
+                                text: "Font"
+                                color: themeManager.color("textSecondary")
+                                font { family: fontManager.currentFont; pixelSize: vpx(22) }
+                                leftPadding: vpx(4)
+                            }
+
+                            Rectangle {
+                                id: fontsRow
+                                width: parent.width
+                                height: vpx(80)
+                                radius: vpx(10)
+                                property bool isSelected: preferencesPanel.selectedItem === "font" && preferencesPanel.panelFocused
+                                color: isSelected ? themeManager.color("surfaceSelected") : themeManager.color("surface")
+                                border {
+                                    width: vpx(1)
+                                    color: isSelected ? themeManager.color("accent") : themeManager.color("border")
+                                }
+                                Behavior on color { ColorAnimation { duration: 130 } }
+                                Behavior on border.color { ColorAnimation { duration: 130 } }
+
+                                Row {
+                                    anchors { left: parent.left; leftMargin: vpx(16); verticalCenter: parent.verticalCenter }
+                                    spacing: vpx(14)
+
+                                    Item {
+                                        width: vpx(32)
+                                        height: vpx(32)
+                                        anchors.verticalCenter: parent.verticalCenter
+
+                                        Rectangle {
+                                            anchors.fill: parent
+                                            radius: vpx(6)
+                                            border.width: vpx(1)
+                                            border.color: themeManager.color("borderLight")
+                                            color: "transparent"
+                                        }
+
+                                        Text {
+                                            anchors.centerIn: parent
+                                            text: "Aa"
+                                            font {
+                                                family: fontManager.currentFont
+                                                pixelSize: vpx(16)
+                                                bold: fontsRow.isSelected
+                                            }
+                                            color: fontsRow.isSelected
+                                            ? themeManager.color("accent")
+                                            : themeManager.color("textTertiary")
+                                            Behavior on color { ColorAnimation { duration: 130 } }
+                                        }
                                     }
-                                    preferencesPanel.selectedItem = "themecolor"
-                                    preferencesPanel.forceActiveFocus()
-                                    themeColorMenu.toggle()
+
+                                    Column {
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        spacing: vpx(3)
+                                        Text {
+                                            text: "Font"
+                                            color: fontsRow.isSelected ? themeManager.color("textPrimary") : themeManager.color("textSecondary")
+                                            font { family: fontManager.currentFont; pixelSize: vpx(28); bold: fontsRow.isSelected }
+                                            Behavior on color { ColorAnimation { duration: 130 } }
+                                        }
+                                        Text {
+                                            text: {
+                                                var map = {
+                                                    montserrat: "Montserrat",
+                                                    roboto: "Roboto",
+                                                    lato: "Lato",
+                                                    default: "Default",
+                                                        poppins: "Poppins",
+                                                        inter: "Inter",
+                                                        oswald: "Oswald",
+                                                        raleway: "Raleway",
+                                                        nunito: "Nunito",
+                                                        playfair: "Playfair Display",
+                                                        merriweather: "Merriweather",
+                                                        kanit: "Kanit",
+                                                        mukta: "Mukta",
+                                                        ibm: "IBM Plex Mono",
+                                                        ptserif: "PT Serif",
+                                                        dmsans: "DM Sans",
+                                                        heebo: "Heebo",
+                                                        titillium: "Titillium Web",
+                                                        hind: "Hind",
+                                                        nanumgothic: "Nanum Gothic",
+                                                        bebasneue: "Bebas Neue",
+                                                        cairo: "Cairo",
+                                                        spacegrotesk: "Space Grotesk",
+                                                        anton: "Anton",
+                                                        ebgaramond: "EB Garamond",
+                                                        assistant: "Assistant",
+                                                        mavenpro: "Maven Pro",
+                                                        barlow: "Barlow Condensed",
+                                                        crimson: "Crimson Text",
+                                                        pacifico: "Pacifico",
+                                                        dmserif: "DM Serif Display",
+                                                        exo2: "Exo 2",
+                                                        teko: "Teko",
+                                                        prompt: "Prompt",
+                                                        rajdhani: "Rajdhani",
+                                                        fjallaone: "Fjalla One",
+                                                        signika: "Signika Negative",
+                                                        comfortaa: "Comfortaa",
+                                                        arvo: "Arvo",
+                                                        archivo: "Archivo",
+                                                        caveat: "Caveat",
+                                                        slabo: "Slabo 27px",
+                                                        abrilfatface: "Abril Fatface",
+                                                        shadows: "Shadows Into Light",
+                                                        tajawal: "Tajawal",
+                                                        redhat: "Red Hat Display",
+                                                        dotgothic: "DotGothic16",
+                                                        play: "Play",
+                                                        pixelify: "Pixelify Sans",
+                                                        tiny5: "Tiny5",
+                                                        jacquard: "Jacquard 12"
+                                                }
+                                                return map[fontsMenu.currentFont] || "Roboto"
+                                            }
+                                            color: fontsRow.isSelected ? themeManager.color("textPrimary") : themeManager.color("textTertiary")
+                                            font { family: fontManager.currentFont; pixelSize: vpx(20) }
+                                            Behavior on color { ColorAnimation { duration: 130 } }
+                                        }
+                                    }
+                                }
+
+                                Rectangle {
+                                    anchors { right: parent.right; rightMargin: vpx(16); verticalCenter: parent.verticalCenter }
+                                    width: vpx(160)
+                                    height: vpx(36)
+                                    radius: vpx(18)
+                                    color: themeManager.color("surfaceHover")
+                                    Text {
+                                        anchors.centerIn: parent
+                                        text: {
+                                            var map = {
+                                                montserrat: "Montserrat",
+                                                roboto: "Roboto",
+                                                lato: "Lato",
+                                                default: "Default",
+                                                    poppins: "Poppins",
+                                                    inter: "Inter",
+                                                    oswald: "Oswald",
+                                                    raleway: "Raleway",
+                                                    nunito: "Nunito",
+                                                    playfair: "Playfair Display",
+                                                    merriweather: "Merriweather",
+                                                    kanit: "Kanit",
+                                                    mukta: "Mukta",
+                                                    ibm: "IBM Plex Mono",
+                                                    ptserif: "PT Serif",
+                                                    dmsans: "DM Sans",
+                                                    heebo: "Heebo",
+                                                    titillium: "Titillium Web",
+                                                    hind: "Hind",
+                                                    nanumgothic: "Nanum Gothic",
+                                                    bebasneue: "Bebas Neue",
+                                                    cairo: "Cairo",
+                                                    spacegrotesk: "Space Grotesk",
+                                                    anton: "Anton",
+                                                    ebgaramond: "EB Garamond",
+                                                    assistant: "Assistant",
+                                                    mavenpro: "Maven Pro",
+                                                    barlow: "Barlow Condensed",
+                                                    crimson: "Crimson Text",
+                                                    pacifico: "Pacifico",
+                                                    dmserif: "DM Serif Display",
+                                                    exo2: "Exo 2",
+                                                    teko: "Teko",
+                                                    prompt: "Prompt",
+                                                    rajdhani: "Rajdhani",
+                                                    fjallaone: "Fjalla One",
+                                                    signika: "Signika Negative",
+                                                    comfortaa: "Comfortaa",
+                                                    arvo: "Arvo",
+                                                    archivo: "Archivo",
+                                                    caveat: "Caveat",
+                                                    slabo: "Slabo 27px",
+                                                    abrilfatface: "Abril Fatface",
+                                                    shadows: "Shadows Into Light",
+                                                    tajawal: "Tajawal",
+                                                    redhat: "Red Hat Display",
+                                                    dotgothic: "DotGothic16",
+                                                    play: "Play",
+                                                    pixelify: "Pixelify Sans",
+                                                    tiny5: "Tiny5",
+                                                    jacquard: "Jacquard 12"
+                                            }
+                                            return map[fontsMenu.currentFont] || "Roboto"
+                                        }
+                                        color: themeManager.color("textPrimary")
+                                        font { family: fontManager.currentFont; pixelSize: vpx(16); bold: true }
+                                        elide: Text.ElideRight
+                                    }
+                                }
+
+                                MouseArea {
+                                    anchors.fill: parent
+                                    onClicked: {
+                                        if (!root.rightFocused) {
+                                            root.rightFocused = true
+                                            preferencesPanel.panelFocused = true
+                                        }
+                                        preferencesPanel.selectedItem = "font"
+                                        preferencesPanel.forceActiveFocus()
+                                        fontsMenu.toggle()
+                                    }
                                 }
                             }
+                        }
+
+                        Rectangle {
+                            anchors { top: prefFlick.top; left: prefFlick.left; right: prefFlick.right }
+                            height: vpx(24)
+                            gradient: Gradient {
+                                GradientStop { position: 0.0; color: themeManager.color("surface") }
+                                GradientStop { position: 1.0; color: "transparent" }
+                            }
+                            visible: prefFlick.contentY > 0
+                        }
+
+                        Rectangle {
+                            anchors { bottom: prefFlick.bottom; left: prefFlick.left; right: prefFlick.right }
+                            height: vpx(24)
+                            gradient: Gradient {
+                                GradientStop { position: 0.0; color: "transparent" }
+                                GradientStop { position: 1.0; color: themeManager.color("surface") }
+                            }
+                            visible: prefFlick.contentY + prefFlick.height < prefFlick.contentHeight
                         }
                     }
                 }
@@ -912,7 +1190,7 @@ FocusScope {
                                     Text {
                                         text: "Pegasus Beacon Lite"
                                         color: themeManager.color("textPrimary")
-                                        font { family: global.fonts.sans; pixelSize: vpx(38); bold: true }
+                                        font { family: fontManager.currentFont; pixelSize: vpx(38); bold: true }
                                     }
 
                                     Text {
@@ -941,13 +1219,13 @@ FocusScope {
                                         text: "Developer"
                                         width: vpx(140)
                                         color: themeManager.color("textSecondary")
-                                        font { family: global.fonts.sans; pixelSize: vpx(22) }
+                                        font { family: fontManager.currentFont; pixelSize: vpx(22) }
                                     }
 
                                     Text {
                                         text: "ZagonAb"
                                         color: themeManager.color("accent")
-                                        font { family: global.fonts.sans; pixelSize: vpx(22); bold: true }
+                                        font { family: fontManager.currentFont; pixelSize: vpx(22); bold: true }
                                     }
                                 }
 
@@ -958,14 +1236,14 @@ FocusScope {
                                         text: "GitHub"
                                         width: vpx(140)
                                         color: themeManager.color("textSecondary")
-                                        font { family: global.fonts.sans; pixelSize: vpx(22) }
+                                        font { family: fontManager.currentFont; pixelSize: vpx(22) }
                                     }
 
                                     Text {
                                         text: "github.com/ZagonAb"
                                         color: themeManager.color("textPrimary")
                                         font {
-                                            family: global.fonts.sans
+                                            family: fontManager.currentFont
                                             pixelSize: vpx(22)
                                             underline: githubLinkMa.containsMouse
                                         }
@@ -987,7 +1265,7 @@ FocusScope {
                                         text: "License"
                                         width: vpx(140)
                                         color: themeManager.color("textSecondary")
-                                        font { family: global.fonts.sans; pixelSize: vpx(22) }
+                                        font { family: fontManager.currentFont; pixelSize: vpx(22) }
                                     }
 
                                     Column {
@@ -997,7 +1275,7 @@ FocusScope {
                                             text: "CC BY-NC-SA 4.0"
                                             color: themeManager.color("textPrimary")
                                             font {
-                                                family: global.fonts.sans
+                                                family: fontManager.currentFont
                                                 pixelSize: vpx(22)
                                                 underline: licenseLinkMa.containsMouse
                                             }
@@ -1035,13 +1313,13 @@ FocusScope {
                                     Text {
                                         text: "Disclaimer"
                                         color: themeManager.color("textSecondary")
-                                        font { family: global.fonts.sans; pixelSize: vpx(22); bold: true }
+                                        font { family: fontManager.currentFont; pixelSize: vpx(22); bold: true }
                                     }
 
                                     Text {
                                         text: "Pegasus Beacon Lite is an independent, open-source project created from scratch as a recreation inspired by the user interface of Beacon Game Launcher. Beacon Game Launcher is proprietary software and this project has no affiliation, association, authorization, or endorsement from Beacon Game Launcher or its developers. All code in this project is original and written specifically for Pegasus Beacon Lite."
                                         color: themeManager.color("textTertiary")
-                                        font { family: global.fonts.sans; pixelSize: vpx(16) }
+                                        font { family: fontManager.currentFont; pixelSize: vpx(16) }
                                         wrapMode: Text.WordWrap
                                         width: parent.width
                                         lineHeight: 1.5
@@ -1055,13 +1333,13 @@ FocusScope {
                                     Text {
                                         text: "Inspired by"
                                         color: themeManager.color("textSecondary")
-                                        font { family: global.fonts.sans; pixelSize: vpx(22); bold: true }
+                                        font { family: fontManager.currentFont; pixelSize: vpx(22); bold: true }
                                     }
 
                                     Text {
                                         text: "Beacon Game Launcher"
                                         color: themeManager.color("textPrimary")
-                                        font { family: global.fonts.sans; pixelSize: vpx(20) }
+                                        font { family: fontManager.currentFont; pixelSize: vpx(20) }
                                     }
                                 }
                             }
@@ -1159,7 +1437,7 @@ FocusScope {
                     anchors.horizontalCenter: parent.horizontalCenter
                     text: "Pegasus Beacon Lite v1.0 · Developed by ZagonAb"
                     color: themeManager.color("textTertiary")
-                    font { family: global.fonts.sans; pixelSize: vpx(11) }
+                    font { family: fontManager.currentFont; pixelSize: vpx(11) }
                 }
                 Text {
                     anchors.horizontalCenter: parent.horizontalCenter
@@ -1219,6 +1497,23 @@ FocusScope {
 
             onColorSelected: function(colorName) {
                 themeManager.setAccentColor(colorName)
+            }
+            onMenuClosed: {
+                preferencesPanel.forceActiveFocus()
+            }
+        }
+
+        FontsMenu {
+            id: fontsMenu
+            z: 20
+            anchorItem: fontsRow
+            openDirection: "down"
+            anchorAlignment: "left"
+
+            Component.onCompleted: loadFromMemory()
+
+            onFontSelected: function(key) {
+                fontManager.setFont(key)
             }
             onMenuClosed: {
                 preferencesPanel.forceActiveFocus()

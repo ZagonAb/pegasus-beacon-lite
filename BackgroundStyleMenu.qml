@@ -58,6 +58,14 @@ Item {
             style: "screenshot",
             hint: "Screenshot only",
             description: "Show game screenshots"
+        },
+
+        {
+            label: "Video",
+            icon: "assets/icon/video.svg",
+            style: "video",
+            hint: "Gameplay video loop",
+            description: "Show game video as background"
         }
     ]
 
@@ -69,16 +77,18 @@ Item {
 
     function _saveToMemory(style) {
         if (style === "hills" || style === "background" || style === "screenshot" ||
-            style === "ps-symbols" || style === "firefly" || style === "pegasus") {
-            api.memory.set(_memoryKey, style)
+            style === "ps-symbols" || style === "firefly" || style === "pegasus" ||
+            style === "video") {
+                api.memory.set(_memoryKey, style)
             }
     }
 
     function loadFromMemory() {
         var saved = api.memory.get(_memoryKey)
         if (saved === "hills" || saved === "background" || saved === "screenshot" ||
-            saved === "ps-symbols" || saved === "firefly" || saved === "pegasus") {
-            currentStyle = saved
+            saved === "ps-symbols" || saved === "firefly" || saved === "pegasus" ||
+            saved === "video") {
+                currentStyle = saved
             } else {
                 currentStyle = "background"
             }
@@ -289,7 +299,7 @@ Item {
                                         return themeManager.color("textTertiary")
                             }
                             font {
-                                family: global.fonts.sans
+                                family: fontManager.currentFont
                                 pixelSize: vpx(22)
                                 weight: (isActive || isCurrent) ? Font.DemiBold : Font.Normal
                             }
@@ -304,7 +314,7 @@ Item {
                                         return themeManager.color("textDisabled")
                             }
                             font {
-                                family: global.fonts.sans
+                                family: fontManager.currentFont
                                 pixelSize: vpx(14)
                             }
                             Behavior on color { ColorAnimation { duration: 120 } }

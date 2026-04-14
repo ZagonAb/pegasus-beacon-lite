@@ -3,17 +3,17 @@ import QtQuick 2.15
 FocusScope {
     id: root
 
-    property var  collectionList: []
-    property int  currentIndex:   0
-    property bool hasFocus:       false
+    property var collectionList: []
+    property int currentIndex:  0
+    property bool hasFocus: false
 
     signal collectionSelected(int index)
 
     implicitHeight: vpx(75)
     clip: true
 
-    readonly property int pillH:   vpx(50)
-    readonly property int pillR:   vpx(25)
+    readonly property int pillH: vpx(50)
+    readonly property int pillR: vpx(25)
     readonly property int _edgeMargin: vpx(24)
 
     NumberAnimation {
@@ -31,15 +31,15 @@ FocusScope {
             return
         }
 
-        var itemLeft  = item.x
+        var itemLeft = item.x
         var itemRight = item.x + item.width
 
-        var refX      = scrollAnim.running ? scrollAnim.to : listView.contentX
-        var viewLeft  = refX
+        var refX  = scrollAnim.running ? scrollAnim.to : listView.contentX
+        var viewLeft = refX
         var viewRight = refX + listView.width
-        var margin    = root._edgeMargin
+        var margin = root._edgeMargin
 
-        var lastIdx  = listView.count - 1
+        var lastIdx = listView.count - 1
         var lastItem = listView.itemAtIndex(lastIdx)
         var totalW
         if (lastItem) {
@@ -81,12 +81,12 @@ FocusScope {
         property bool pressed: false
 
         readonly property string bgColor: btnL1.pressed
-            ? themeManager.color("surfaceHover")
-            : themeManager.color("iconPrimary")
+        ? themeManager.color("surfaceHover")
+        : themeManager.color("iconPrimary")
 
         readonly property string fgColor: themeManager.currentTheme === "light"
-            ? "#FFFFFF"
-            : themeManager.color("surface")
+        ? "#FFFFFF"
+        : themeManager.color("surface")
 
         Canvas {
             id: canvasL1
@@ -97,7 +97,7 @@ FocusScope {
             onPaint: {
                 var ctx = getContext("2d")
                 ctx.clearRect(0, 0, width, height)
-                var rBig   = height * 0.42
+                var rBig = height * 0.42
                 var rSmall = height * 0.20
                 var w = width, h = height
                 ctx.beginPath()
@@ -128,18 +128,18 @@ FocusScope {
 
         Text {
             anchors.centerIn: parent
-            text:  "RB"
+            text: "RB"
             color: btnL1.fgColor
             font {
-                family:    globalFonts.condensed
+                family: fontManager.currentFont
                 pixelSize: vpx(25)
-                bold:      true
+                bold: true
             }
         }
 
         MouseArea {
             anchors.fill: parent
-            onPressed:  btnL1.pressed = true
+            onPressed: btnL1.pressed = true
             onReleased: btnL1.pressed = false
             onClicked: {
                 if (root.currentIndex > 0)
@@ -189,14 +189,14 @@ FocusScope {
                 anchors.centerIn: parent
                 text: modelData.shortName.toUpperCase()
                 font {
-                    family: globalFonts.condensed
+                    family: fontManager.currentFont
                     pixelSize: vpx(32)
                     letterSpacing: vpx(1.2)
                     bold: tabItem.isActive
                 }
                 color: tabItem.isActive
-                       ? themeManager.color("textPrimary")
-                       : (tabItem.hovered ? themeManager.color("textSecondary") : themeManager.color("textTertiary"))
+                ? themeManager.color("textPrimary")
+                : (tabItem.hovered ? themeManager.color("textSecondary") : themeManager.color("textTertiary"))
                 Behavior on color { ColorAnimation { duration: 150 } }
             }
 
@@ -223,12 +223,12 @@ FocusScope {
         property bool pressed: false
 
         readonly property string bgColor: btnR1.pressed
-            ? themeManager.color("surfaceHover")
-            : themeManager.color("iconPrimary")
+        ? themeManager.color("surfaceHover")
+        : themeManager.color("iconPrimary")
 
         readonly property string fgColor: themeManager.currentTheme === "light"
-            ? "#FFFFFF"
-            : themeManager.color("surface")
+        ? "#FFFFFF"
+        : themeManager.color("surface")
 
         Canvas {
             id: canvasR1
@@ -239,7 +239,7 @@ FocusScope {
             onPaint: {
                 var ctx = getContext("2d")
                 ctx.clearRect(0, 0, width, height)
-                var rBig   = height * 0.42
+                var rBig = height * 0.42
                 var rSmall = height * 0.20
                 var w = width, h = height
                 ctx.beginPath()
@@ -260,7 +260,7 @@ FocusScope {
             Connections {
                 target: btnR1
                 function onPressedChanged() { canvasR1.requestPaint() }
-                function onBgColorChanged()  { canvasR1.requestPaint() }
+                function onBgColorChanged() { canvasR1.requestPaint() }
             }
             Connections {
                 target: themeManager
@@ -273,7 +273,7 @@ FocusScope {
             text: "LB"
             color: btnR1.fgColor
             font {
-                family: globalFonts.condensed
+                family: fontManager.currentFont
                 pixelSize: vpx(25)
                 bold: true
             }

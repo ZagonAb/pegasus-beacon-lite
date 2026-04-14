@@ -23,7 +23,7 @@ Item {
             text: fb.buttonText
             color: themeManager.color("surface")
             font {
-                family: global.fonts.condensed
+                family: fontManager.currentFont
                 pixelSize: vpx(22)
                 bold: true
             }
@@ -41,7 +41,7 @@ Item {
         text: fb.labelText
         color: themeManager.color("textPrimary")
         font {
-            family: global.fonts.sans
+            family: fontManager.currentFont
             pixelSize: vpx(26)
         }
     }

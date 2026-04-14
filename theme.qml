@@ -2,6 +2,7 @@ import QtQuick 2.15
 import QtQuick.Layouts 1.15
 import SortFilterProxyModel 0.2
 import QtGraphicalEffects 1.15
+import QtMultimedia 5.15
 import "utils.js" as Utils
 
 FocusScope {
@@ -58,6 +59,9 @@ FocusScope {
     }
 
     ThemeManager { id: themeManager }
+    FontManager  { id: fontManager  }
+    SoundManager { id: soundManager  }
+
     property string currentTheme: themeManager.currentTheme
 
     Connections {
@@ -109,7 +113,8 @@ FocusScope {
     function _loadBackgroundStyle() {
         var saved = api.memory.get("backgroundStyle")
         if (saved === "hills" || saved === "background" || saved === "screenshot" ||
-            saved === "ps-symbols" || saved === "firefly" || saved === "pegasus")
+            saved === "ps-symbols" || saved === "firefly" || saved === "pegasus" ||
+            saved === "video")
             root.backgroundStyle = saved
             else
                 root.backgroundStyle = "background"
@@ -317,15 +322,42 @@ FocusScope {
             var game = currentGame
             if (!game) return ""
                 if (_isShaderMode) return ""
-                    if (root.backgroundStyle === "screenshot")
-                        return game.assets.screenshot || ""
-                        return game.assets.background || game.assets.screenshot || ""
+                    if (_isVideoMode) return ""
+                        if (root.backgroundStyle === "screenshot")
+                            return game.assets.screenshot || ""
+                            return game.assets.background || game.assets.screenshot || ""
+        }
+
+        readonly property string _videoSrc: {
+            var game = currentGame
+            if (!game) {
+                console.log("[bgArea] No current game")
+                return ""
+            }
+
+            console.log("[bgArea] Current game:", game.title)
+            console.log("[bgArea] assets.video:", game.assets.video)
+            console.log("[bgArea] assets.videoList:", game.assets.videoList)
+
+            if (game.assets.video) {
+                console.log("[bgArea] Found video:", game.assets.video)
+                return game.assets.video
+            }
+            if (game.assets.videoList && game.assets.videoList.length > 0) {
+                console.log("[bgArea] Found videoList[0]:", game.assets.videoList[0])
+                return game.assets.videoList[0]
+            }
+
+            console.log("[bgArea] No video found")
+            return ""
         }
 
         readonly property bool _isShaderMode: {
             var s = root.backgroundStyle
             return s === "hills" || s === "ps-symbols" || s === "firefly" || s === "pegasus"
         }
+
+        readonly property bool _isVideoMode: root.backgroundStyle === "video"
 
         property bool _showA: true
 
@@ -358,6 +390,95 @@ FocusScope {
             PegasusShaderEffect {
                 anchors.fill: parent
                 theme: themeManager.currentTheme === "light" ? 1.0 : 0.0
+            }
+        }
+
+        Component {
+            id: compVideoBackground
+
+            Item {
+                anchors.fill: parent
+
+                property alias videoPlayer: videoPlayer
+
+                Timer {
+                    id: videoRevealTimer
+                    interval: 500
+                    repeat: false
+                    onTriggered: {
+                        videoPlayer.opacity = 1.0
+                    }
+                }
+
+                Rectangle {
+                    id: baseBg
+                    anchors.fill: parent
+                    color: themeManager.currentTheme === "dark" ? "#0D0D0D" : "#E8ECEF"
+                }
+
+                Image {
+                    id: fallbackImage
+                    anchors.fill: parent
+                    source: bgArea.currentGame
+                    ? (bgArea.currentGame.assets.background
+                    || bgArea.currentGame.assets.screenshot || "") : ""
+                    fillMode: Image.PreserveAspectCrop
+                    smooth: true
+                    asynchronous: true
+                    opacity: videoPlayer.opacity < 1.0 ? 1.0 : 0.0
+                    Behavior on opacity { NumberAnimation { duration: 400; easing.type: Easing.InOutQuad } }
+                }
+
+                Video {
+                    id: videoPlayer
+                    anchors.fill: parent
+                    fillMode: VideoOutput.PreserveAspectCrop
+                    loops: MediaPlayer.Infinite
+                    autoPlay: false
+                    muted: true
+                    volume: 0
+                    visible: source !== ""
+                    opacity: 0.0
+                    Behavior on opacity {
+                        NumberAnimation { duration: 500; easing.type: Easing.InOutQuad }
+                    }
+
+                    onStatusChanged: {
+                        console.log("[Video] Status:", status, "Source:", source)
+                        if (status === MediaPlayer.Loaded) {
+                            console.log("[Video] Loaded — esperando 1s antes de fade in")
+                            play()
+                            videoRevealTimer.restart()
+                        } else if (status === MediaPlayer.NoMedia
+                            || status === MediaPlayer.InvalidMedia) {
+                            opacity = 0.0
+                            videoRevealTimer.stop()
+                            }
+                    }
+
+                    onErrorChanged: {
+                        if (error !== MediaPlayer.NoError) {
+                            console.log("[Video] Error:", error, errorString)
+                            opacity = 0.0
+                        }
+                    }
+
+                    onSourceChanged: {
+                        console.log("[Video] Source changed to:", source)
+                        opacity = 0.0
+                        videoRevealTimer.stop()
+                    }
+                }
+
+                Rectangle {
+                    anchors.fill: parent
+                    gradient: Gradient {
+                        orientation: Gradient.Horizontal
+                        GradientStop { position: 0.0; color: themeManager.currentTheme === "dark" ? "#CC000000" : "#CCFFFFFF" }
+                        GradientStop { position: 0.5; color: themeManager.currentTheme === "dark" ? "#55000000" : "#55FFFFFF" }
+                        GradientStop { position: 1.0; color: themeManager.currentTheme === "dark" ? "#CC000000" : "#CCFFFFFF" }
+                    }
+                }
             }
         }
 
@@ -401,6 +522,23 @@ FocusScope {
             Behavior on opacity { NumberAnimation { duration: 300 } }
         }
 
+        Loader {
+            id: videoLoader
+            anchors.fill: parent
+            active: bgArea._isVideoMode
+            sourceComponent: compVideoBackground
+
+            onLoaded: {
+                console.log("[VideoLoader] Component loaded")
+                if (bgArea._videoSrc !== "") {
+                    pendingVideoTimer.restart()
+                }
+            }
+
+            opacity: active && item ? 1.0 : 0.0
+            Behavior on opacity { NumberAnimation { duration: 200 } }
+        }
+
         Connections {
             target: themeManager
             function onEffectiveAccentColorChanged() {
@@ -437,7 +575,88 @@ FocusScope {
         Timer {
             id: _shaderUnloadTimer
             interval: 320
-            onTriggered: shaderLoader.active = false
+            onTriggered: {
+                shaderLoader.active = false
+                videoLoader.active = false
+            }
+        }
+
+        Timer {
+            id: _videoDebounce
+            interval: 150
+            onTriggered: {
+                //console.log("[VideoDebounce] Triggered, videoSrc:", bgArea._videoSrc)
+                bgArea.applyVideoSource()
+            }
+        }
+
+        function applyVideoSource() {
+            if (!videoLoader.item || !videoLoader.item.videoPlayer) {
+                //console.log("[VideoDebounce] VideoLoader not ready, waiting...")
+                pendingVideoTimer.restart()
+                return
+            }
+
+            var player = videoLoader.item.videoPlayer
+            var newSource = bgArea._videoSrc
+
+            //console.log("[VideoDebounce] Setting source to:", newSource)
+
+            player.stop()
+            player.source = ""
+
+            if (newSource !== "") {
+                setSourceTimer.newSource = newSource
+                setSourceTimer.restart()
+            }
+        }
+
+        Timer {
+            id: setSourceTimer
+            interval: 50
+            repeat: false
+            property string newSource: ""
+            onTriggered: {
+                if (videoLoader.item && videoLoader.item.videoPlayer) {
+                    //console.log("[SetSourceTimer] Setting source:", newSource)
+                    videoLoader.item.videoPlayer.source = newSource
+                }
+            }
+        }
+
+        Timer {
+            id: pendingVideoTimer
+            interval: 100
+            repeat: true
+            property int attempts: 0
+            onTriggered: {
+                attempts++
+                //console.log("[PendingVideoTimer] Attempt", attempts)
+
+                if (videoLoader.item && videoLoader.item.videoPlayer) {
+                    //console.log("[PendingVideoTimer] VideoLoader now ready")
+                    stop()
+                    attempts = 0
+                    bgArea.applyVideoSource()
+                } else if (attempts > 20) {
+                    //console.log("[PendingVideoTimer] Timeout waiting for VideoLoader")
+                    stop()
+                    attempts = 0
+                }
+            }
+        }
+
+        Timer {
+            id: reloadTimer
+            interval: 30
+            repeat: false
+            property string newSource: ""
+            onTriggered: {
+                if (videoLoader.item && videoLoader.item.videoPlayer && newSource !== "") {
+                    videoLoader.item.videoPlayer.source = newSource
+                    videoLoader.item.videoPlayer.play()
+                }
+            }
         }
 
         Connections {
@@ -446,12 +665,31 @@ FocusScope {
                 if (bgArea._isShaderMode) {
                     _shaderUnloadTimer.stop()
                     shaderLoader.active = true
+                    videoLoader.active = false
                     if (_bgA) _bgA.source = ""
                         if (_bgB) _bgB.source = ""
                             bgArea._showA = true
+                } else if (bgArea._isVideoMode) {
+                    _shaderUnloadTimer.stop()
+                    shaderLoader.active = false
+                    videoLoader.active = true
+                    if (_bgA) _bgA.source = ""
+                        if (_bgB) _bgB.source = ""
+                            bgArea._showA = true
+                            _videoDebounce.restart()
                 } else {
                     _shaderUnloadTimer.restart()
                     _bgDebounce.restart()
+                }
+            }
+        }
+
+        Connections {
+            target: bgArea
+            function onCurrentGameChanged() {
+                if (bgArea._isVideoMode) {
+                   //console.log("[bgArea] Game changed in video mode")
+                    _videoDebounce.restart()
                 }
             }
         }
@@ -462,8 +700,8 @@ FocusScope {
             fillMode: Image.Stretch
             smooth: true
             asynchronous: true
-            visible: !bgArea._isShaderMode
-            opacity: !bgArea._isShaderMode && bgArea._showA ? 0.60 : 0.0
+            visible: !bgArea._isShaderMode && !bgArea._isVideoMode
+            opacity: !bgArea._isShaderMode && !bgArea._isVideoMode && bgArea._showA ? 0.60 : 0.0
             Behavior on opacity { NumberAnimation { duration: 300; easing.type: Easing.InOutQuad } }
         }
 
@@ -473,8 +711,8 @@ FocusScope {
             fillMode: Image.Stretch
             smooth: true
             asynchronous: true
-            visible: !bgArea._isShaderMode
-            opacity: !bgArea._isShaderMode && !bgArea._showA ? 0.60 : 0.0
+            visible: !bgArea._isShaderMode && !bgArea._isVideoMode
+            opacity: !bgArea._isShaderMode && !bgArea._isVideoMode && !bgArea._showA ? 0.60 : 0.0
             Behavior on opacity { NumberAnimation { duration: 300; easing.type: Easing.InOutQuad } }
         }
 
@@ -513,7 +751,7 @@ FocusScope {
             id: rectopa
             anchors.fill: parent
             color: themeManager.currentTheme === "dark" ? "#0D0D0D" : "#E8ECEF"
-            opacity: bgArea._isShaderMode
+            opacity: bgArea._isShaderMode || bgArea._isVideoMode
             ? 0.0
             : (themeManager.currentTheme === "dark" ? 0.7 : 0.05)
             Behavior on opacity { NumberAnimation { duration: 300 } }
@@ -521,7 +759,7 @@ FocusScope {
 
         Rectangle {
             anchors.fill: parent
-            visible: !bgArea._isShaderMode
+            visible: !bgArea._isShaderMode && !bgArea._isVideoMode
             gradient: Gradient {
                 orientation: Gradient.Horizontal
                 GradientStop { position: 0.0; color: themeManager.currentTheme === "dark" ? "#CC000000" : "#CCFFFFFF" }
@@ -533,10 +771,10 @@ FocusScope {
 
     Rectangle {
         anchors { top: parent.top; left: parent.left; right: parent.right }
-        height: vpx(56)
+        height: vpx(100)
         z: 1
         gradient: Gradient {
-            GradientStop { position: 0.0; color: themeManager.currentTheme === "dark" ? "#EE000000" : "#EEFFFFFF" }
+            GradientStop { position: 0.3; color: themeManager.currentTheme === "dark" ? "#EE000000" : "#EEFFFFFF" }
             GradientStop { position: 1.0; color: themeManager.currentTheme === "dark" ? "#00000000" : "#00FFFFFF" }
         }
     }
@@ -555,7 +793,7 @@ FocusScope {
             Text {
                 id: clockLabel
                 color: themeManager.color("textSecondary")
-                font { family: global.fonts.sans; pixelSize: vpx(28) }
+                font { family: fontManager.currentFont; pixelSize: vpx(28) }
                 Timer {
                     interval: 30000
                     running: true
@@ -568,7 +806,7 @@ FocusScope {
             Text {
                 text: "•"
                 color: themeManager.color("textSecondary")
-                font { family: global.fonts.sans; pixelSize: vpx(18) }
+                font { family: fontManager.currentFont; pixelSize: vpx(18) }
                 anchors.verticalCenter: parent.verticalCenter
             }
 
@@ -608,7 +846,7 @@ FocusScope {
                     anchors.verticalCenter: parent.verticalCenter
                     text: "AC-POWER ⚡"
                     color: themeManager.color("textSecondary")
-                    font { family: global.fonts.sans; pixelSize: vpx(28) }
+                    font { family: fontManager.currentFont; pixelSize: vpx(28) }
                 }
             }
         }
@@ -689,7 +927,7 @@ FocusScope {
                         anchors.verticalCenter: parent.verticalCenter
                         text: "Search game"
                         color: themeManager.color("textTertiary")
-                        font { family: global.fonts.sans; pixelSize: vpx(20) }
+                        font { family: fontManager.currentFont; pixelSize: vpx(20) }
                         visible: searchInput.text === ""
                     }
 
@@ -697,7 +935,7 @@ FocusScope {
                         id: searchInput
                         anchors.fill: parent
                         color: themeManager.color("textPrimary")
-                        font { family: global.fonts.sans; pixelSize: vpx(20) }
+                        font { family: fontManager.currentFont; pixelSize: vpx(20) }
                         clip: true
                         focus: root.searchActive
                         selectionColor: themeManager.color("accent")
@@ -1003,7 +1241,7 @@ FocusScope {
                 color: themeManager.accentColorName === "default"
                 ? themeManager.color("textPrimary")
                 : themeManager.accentColorValue
-                font { family: global.fonts.sans; pixelSize: vpx(28); bold: true }
+                font { family: fontManager.currentFont; pixelSize: vpx(28); bold: true }
                 elide: Text.ElideRight
             }
         }
@@ -1053,7 +1291,7 @@ FocusScope {
                     Text {
                         text: "Release date"
                         color: themeManager.color("textSecondary")
-                        font { family: global.fonts.sans; pixelSize: vpx(18) }
+                        font { family: fontManager.currentFont; pixelSize: vpx(18) }
                     }
                     Text {
                         text: {
@@ -1063,7 +1301,7 @@ FocusScope {
                                     return listMetaRow.selGame.releaseYear.toString()
                         }
                         color: themeManager.color("textPrimary")
-                        font { family: global.fonts.sans; pixelSize: vpx(22); bold: true }
+                        font { family: fontManager.currentFont; pixelSize: vpx(22); bold: true }
                     }
                 }
 
@@ -1073,12 +1311,12 @@ FocusScope {
                     Text {
                         text: "Genre"
                         color: themeManager.color("textSecondary")
-                        font { family: global.fonts.sans; pixelSize: vpx(18) }
+                        font { family: fontManager.currentFont; pixelSize: vpx(18) }
                     }
                     Text {
                         text: listMetaRow.selGame ? listMetaRow.selGame.genre : ""
                         color: themeManager.color("textPrimary")
-                        font { family: global.fonts.sans; pixelSize: vpx(22); bold: true }
+                        font { family: fontManager.currentFont; pixelSize: vpx(22); bold: true }
                         elide: Text.ElideRight
                         width: vpx(280)
                     }
@@ -1090,12 +1328,12 @@ FocusScope {
                     Text {
                         text: "Developer"
                         color: themeManager.color("textSecondary")
-                        font { family: global.fonts.sans; pixelSize: vpx(18) }
+                        font { family: fontManager.currentFont; pixelSize: vpx(18) }
                     }
                     Text {
                         text: listMetaRow.selGame ? listMetaRow.selGame.developer : ""
                         color: themeManager.color("textPrimary")
-                        font { family: global.fonts.sans; pixelSize: vpx(22); bold: true }
+                        font { family: fontManager.currentFont; pixelSize: vpx(22); bold: true }
                     }
                 }
 
@@ -1105,12 +1343,12 @@ FocusScope {
                     Text {
                         text: "Publisher"
                         color: themeManager.color("textSecondary")
-                        font { family: global.fonts.sans; pixelSize: vpx(18) }
+                        font { family: fontManager.currentFont; pixelSize: vpx(18) }
                     }
                     Text {
                         text: listMetaRow.selGame ? listMetaRow.selGame.publisher : ""
                         color: themeManager.color("textPrimary")
-                        font { family: global.fonts.sans; pixelSize: vpx(22); bold: true }
+                        font { family: fontManager.currentFont; pixelSize: vpx(22); bold: true }
                     }
                 }
             }
@@ -1159,7 +1397,7 @@ FocusScope {
             anchors.centerIn: parent
             text: qsTr("Enter a search term.")
             color: themeManager.color("textSecondary")
-            font { family: global.fonts.sans; pixelSize: vpx(26) }
+            font { family: fontManager.currentFont; pixelSize: vpx(26) }
         }
     }
 

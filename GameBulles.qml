@@ -286,33 +286,54 @@ FocusScope {
             }
 
             Keys.onPressed: {
-                if (api.keys.isAccept(event)) {
-                    event.accepted = true
-                    if (event.isAutoRepeat) {
-                        if (!longPressTimer.running && root._acceptHeld) {
-                            longPressTimer.restart()
-                        }
-                    } else {
-                        if (!root._acceptHeld) {
-                            longPressTimer.restart()
-                            root._acceptHeld = true
-                        }
+                if (api.keys.isUp(event) || api.keys.isDown(event) ||
+                    api.keys.isLeft(event) || api.keys.isRight(event)) {
+                    if (typeof soundManager !== 'undefined') {
+                        soundManager.playNavigation()
                     }
-                    return
-                }
-                if (api.keys.isNextPage(event)) { event.accepted = true; root.nextCollectionRequested(); return }
-                if (api.keys.isPrevPage(event)) { event.accepted = true; root.prevCollectionRequested(); return }
+                    }
 
-                var next = -1
-                if (api.keys.isUp(event)) next = root.neighborIn(root.currentGameIndex, "up")
-                    if (api.keys.isDown(event)) next = root.neighborIn(root.currentGameIndex, "down")
-                        if (api.keys.isLeft(event)) next = root.neighborIn(root.currentGameIndex, "left")
-                            if (api.keys.isRight(event)) next = root.neighborIn(root.currentGameIndex, "right")
-                                if (next >= 0) {
-                                    event.accepted = true
-                                    root.currentGameIndex = next
-                                    root.ensureVisible(next)
-                                }
+                    if (api.keys.isAccept(event)) {
+                        event.accepted = true
+                        if (event.isAutoRepeat) {
+                            if (!longPressTimer.running && root._acceptHeld) {
+                                longPressTimer.restart()
+                            }
+                        } else {
+                            if (!root._acceptHeld) {
+                                longPressTimer.restart()
+                                root._acceptHeld = true
+                            }
+                        }
+                        return
+                    }
+                    if (api.keys.isNextPage(event)) {
+                        event.accepted = true
+                        if (typeof soundManager !== 'undefined') {
+                            soundManager.playCollection()
+                        }
+                        root.nextCollectionRequested()
+                        return
+                    }
+                    if (api.keys.isPrevPage(event)) {
+                        event.accepted = true
+                        if (typeof soundManager !== 'undefined') {
+                            soundManager.playCollection()
+                        }
+                        root.prevCollectionRequested()
+                        return
+                    }
+
+                    var next = -1
+                    if (api.keys.isUp(event)) next = root.neighborIn(root.currentGameIndex, "up")
+                        if (api.keys.isDown(event)) next = root.neighborIn(root.currentGameIndex, "down")
+                            if (api.keys.isLeft(event)) next = root.neighborIn(root.currentGameIndex, "left")
+                                if (api.keys.isRight(event)) next = root.neighborIn(root.currentGameIndex, "right")
+                                    if (next >= 0) {
+                                        event.accepted = true
+                                        root.currentGameIndex = next
+                                        root.ensureVisible(next)
+                                    }
             }
 
             Keys.onReleased: {
@@ -560,6 +581,7 @@ FocusScope {
                         text: gameData ? gameData.title.charAt(0).toUpperCase() : ""
                         color: themeManager.color("textTertiary")
                         font {
+                            family: fontManager.currentFont
                             pixelSize: parent.width * 0.2
                             bold: true
                         }
@@ -642,7 +664,7 @@ FocusScope {
                     text: gameData ? gameData.title : ""
                     color: themeManager.effectiveAccentColor
                     font {
-                        family: global.fonts.sans
+                        family: fontManager.currentFont
                         pixelSize: vpx(20)
                         bold: true
                     }

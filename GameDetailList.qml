@@ -93,10 +93,8 @@ FocusScope {
             return themeManager.color("textPrimary")
 
             if (themeManager.currentTheme === "dark") {
-                // Dark: color base puro (#10B981 para Emerald)
                 return accentBase
             } else {
-                // Light: ligeramente más oscuro para contraste
                 return Qt.darker(accentBase, 1.15)
             }
     }
@@ -106,47 +104,24 @@ FocusScope {
             return themeManager.color("surfaceHighlight")
 
             if (themeManager.currentTheme === "dark") {
-                // Dark: versión muy oscura (#042c1f para Emerald)
                 return Qt.darker(accentBase, 3.0)
             } else {
-                // Light: versión semi-transparente pero más clara
                 var lightVersion = Qt.lighter(accentBase, 1.4)
                 return Qt.rgba(lightVersion.r, lightVersion.g, lightVersion.b, 0.65)
             }
     }
-
-    // Función para obtener color de textos secundarios (como #48723e desde #10B981)
-    /*function getAccentSecondaryColor() {
-        if (themeManager.accentColorName === "default")
-            return themeManager.color("textSecondary")
-
-            if (themeManager.currentTheme === "dark") {
-                // Para dark: versión más oscura del acento
-                return Qt.darker(accentBase, 1.3)
-            } else {
-                // Para light: versión más suave
-                return Qt.rgba(accentBase.r, accentBase.g, accentBase.b, 0.12)
-            }
-    }*/
-
-    // En la sección de propiedades
-
-    // En la sección de propiedades
 
     function getAccentSecondaryColor() {
         if (themeManager.accentColorName === "default")
             return themeManager.color("textSecondary")
 
             if (themeManager.currentTheme === "dark") {
-                // Dark: versión muy clara/brillante (#a9ffec para Emerald)
                 return Qt.lighter(accentBase, 1.8)
             } else {
-                // Light: versión más oscura pero legible
                 return Qt.darker(accentBase, 1.2)
             }
     }
 
-    // Bonus: función específica para iconos (más claros)
     function getAccentIconColor() {
         if (themeManager.accentColorName === "default")
             return themeManager.color("iconSecondary")
@@ -154,7 +129,6 @@ FocusScope {
             if (themeManager.currentTheme === "dark") {
                 return Qt.darker(accentBase, 1.2)
             } else {
-                // Light: iconos más claros y brillantes
                 var desaturated = Qt.rgba(
                     accentBase.r * 0.8 + 0.2,
                     accentBase.g * 0.8 + 0.2,
@@ -172,19 +146,15 @@ FocusScope {
             return accentBase
     }
 
-    // Función específica para el color del favorito
     function getFavoriteColor() {
         if (themeManager.accentColorName === "default") {
-            // Cuando no hay color acento personalizado
-            // Puedes usar un color especial para favoritos (ej: dorado)
             if (themeManager.currentTheme === "dark") {
-                return "#FFD700"  // Dorado para dark mode
+                return "#FFD700"
             } else {
-                return "#DAA520"  // Dorado más oscuro para light mode
+                return "#DAA520"
             }
         }
 
-        // Cuando hay color acento personalizado, usar el mismo que el título
         return getAccentTitleColor()
     }
 
@@ -217,6 +187,12 @@ FocusScope {
             onCurrentIndexChanged: root.currentGameIndex = currentIndex
 
             Keys.onPressed: {
+                if (event.key === Qt.Key_Up || event.key === Qt.Key_Down) {
+                    if (typeof soundManager !== 'undefined') {
+                        soundManager.playNavigation()
+                    }
+                }
+
                 if (api.keys.isAccept(event)) {
                     event.accepted = true
                     if (event.isAutoRepeat) {
@@ -231,8 +207,23 @@ FocusScope {
                     }
                     return
                 }
-                if (api.keys.isNextPage(event)) { event.accepted = true; root.nextCollectionRequested(); return }
-                if (api.keys.isPrevPage(event))  { event.accepted = true; root.prevCollectionRequested(); return }
+
+                if (api.keys.isNextPage(event)) {
+                    event.accepted = true
+                    if (typeof soundManager !== 'undefined') {
+                        soundManager.playCollection()
+                    }
+                    root.nextCollectionRequested()
+                    return
+                }
+                if (api.keys.isPrevPage(event)) {
+                    event.accepted = true
+                    if (typeof soundManager !== 'undefined') {
+                        soundManager.playCollection()
+                    }
+                    root.prevCollectionRequested()
+                    return
+                }
             }
 
             Keys.onReleased: {
@@ -255,14 +246,6 @@ FocusScope {
                 height: row.isActive ? root.activeH : root.itemH
 
                 Behavior on height { NumberAnimation { duration: 180; easing.type: Easing.OutQuad } }
-
-                /*Rectangle {
-                    anchors { fill: parent; bottomMargin: vpx(4) }
-                    radius: root.cardRadius
-                    color: row.isActive ? root.activeCardColor : "transparent"
-                    opacity: row.isActive ? 1.0 : 0.0
-                    Behavior on opacity { NumberAnimation { duration: 180 } }
-                }*/
 
                 Rectangle {
                     anchors { fill: parent; bottomMargin: vpx(4) }
@@ -287,25 +270,6 @@ FocusScope {
                         }
                         height: root.itemH
 
-                        /*Text {
-                            id: titleTxt
-                            anchors {
-                                left: parent.left
-                                right: favoriteIcon.left
-                                rightMargin: vpx(12)
-                                verticalCenter: parent.verticalCenter
-                            }
-                            text: row.game ? row.game.title : ""
-                            color: row.isActive ? root.activeTitleColor : root.inactiveColor
-                            font.family: global.fonts.sans
-                            font.pixelSize: row.isActive ? vpx(32) : vpx(29)
-                            font.bold: row.isActive
-                            elide: Text.ElideRight
-
-                            Behavior on color { ColorAnimation  { duration: 160 } }
-                            Behavior on font.pixelSize { NumberAnimation { duration: 160 } }
-                        }*/
-
                         Text {
                             id: titleTxt
                             anchors {
@@ -320,7 +284,7 @@ FocusScope {
                                     if (!root.hasCustomAccent) return root.activeTitleColor
                                         return root.accentTitleColor
                             }
-                            font.family: global.fonts.sans
+                            font.family: fontManager.currentFont
                             font.pixelSize: row.isActive ? vpx(32) : vpx(29)
                             font.bold: row.isActive
                             elide: Text.ElideRight
@@ -328,23 +292,6 @@ FocusScope {
                             Behavior on color { ColorAnimation { duration: 160 } }
                             Behavior on font.pixelSize { NumberAnimation { duration: 160 } }
                         }
-
-                        /*Image {
-                            id: favoriteIcon
-                            anchors {
-                                right: parent.right
-                                verticalCenter: parent.verticalCenter
-                            }
-                            width: row.isActive ? vpx(28) : vpx(24)
-                            height: row.isActive ? vpx(28) : vpx(24)
-                            source: "assets/icon/favorite-on.svg"
-                            visible: row.game ? row.game.favorite === true : false
-                            fillMode: Image.PreserveAspectFit
-                            mipmap: true
-
-                            Behavior on width { NumberAnimation { duration: 160 } }
-                            Behavior on height { NumberAnimation { duration: 160 } }
-                        }*/
 
                         Image {
                             id: favoriteIcon
@@ -359,15 +306,12 @@ FocusScope {
                             fillMode: Image.PreserveAspectFit
                             mipmap: true
 
-                            // El ícono favorito SIEMPRE usa el color del título, independientemente de si está seleccionado
                             layer.enabled: root.hasCustomAccent && visible
                             layer.effect: ColorOverlay {
                                 color: {
                                     if (!root.hasCustomAccent) {
-                                        // Si no hay color personalizado, usar el color primario del tema
                                         return themeManager.color("iconPrimary")
                                     }
-                                    // Usar el mismo color que el título
                                     return root.accentTitleColor
                                 }
                             }
@@ -425,9 +369,9 @@ FocusScope {
                                 color: {
                                     if (!row.isActive) return "#555555"
                                         if (!root.hasCustomAccent) return "#555555"
-                                            return root.accentSecondaryColor  // Mismo color que los íconos
+                                            return root.accentSecondaryColor
                                 }
-                                font { family: global.fonts.sans; pixelSize: vpx(20) }
+                                font { family: fontManager.currentFont; pixelSize: vpx(20) }
                                 anchors.verticalCenter: parent.verticalCenter
                             }
                         }
@@ -468,9 +412,9 @@ FocusScope {
                                 color: {
                                     if (!row.isActive) return "#555555"
                                         if (!root.hasCustomAccent) return "#555555"
-                                            return root.accentSecondaryColor  // Mismo color que los íconos
+                                            return root.accentSecondaryColor
                                 }
-                                font { family: global.fonts.sans; pixelSize: vpx(20) }
+                                font { family: fontManager.currentFont; pixelSize: vpx(20) }
                                 anchors.verticalCenter: parent.verticalCenter
                             }
                         }
@@ -511,9 +455,9 @@ FocusScope {
                                 color: {
                                     if (!row.isActive) return "#555555"
                                         if (!root.hasCustomAccent) return "#555555"
-                                            return root.accentSecondaryColor  // Mismo color que los íconos
+                                            return root.accentSecondaryColor
                                 }
-                                font { family: global.fonts.sans; pixelSize: vpx(20) }
+                                font { family: fontManager.currentFont; pixelSize: vpx(20) }
                                 anchors.verticalCenter: parent.verticalCenter
                                 width: Math.min(implicitWidth, vpx(170))
                                 elide: Text.ElideRight
@@ -564,9 +508,9 @@ FocusScope {
                                 color: {
                                     if (!row.isActive) return "#555555"
                                         if (!root.hasCustomAccent) return "#555555"
-                                            return root.accentSecondaryColor  // Mismo color que los íconos
+                                            return root.accentSecondaryColor
                                 }
-                                font { family: global.fonts.sans; pixelSize: vpx(20) }
+                                font { family: fontManager.currentFont; pixelSize: vpx(20) }
                                 elide: Text.ElideRight
                             }
                         }
@@ -692,7 +636,6 @@ FocusScope {
                 color: "#191919"
                 visible: gameImg.status !== Image.Ready
 
-                // Agrega borde de acento cuando el juego está seleccionado
                 border.width: root.hasCustomAccent && root.activeFocus ? vpx(2) : 0
                 border.color: root.activeAccentBorder
 

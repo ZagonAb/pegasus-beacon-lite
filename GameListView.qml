@@ -197,6 +197,12 @@ FocusScope {
         onCurrentIndexChanged: root.currentGameIndex = currentIndex
 
         Keys.onPressed: {
+            if (event.key === Qt.Key_Left || event.key === Qt.Key_Right) {
+                if (typeof soundManager !== 'undefined') {
+                    soundManager.playNavigation()
+                }
+            }
+
             if (api.keys.isAccept(event)) {
                 event.accepted = true
                 if (event.isAutoRepeat) {
@@ -211,9 +217,25 @@ FocusScope {
                 }
                 return
             }
-            if (api.keys.isNextPage(event)) { event.accepted = true; root.nextCollectionRequested(); return }
-            if (api.keys.isPrevPage(event))  { event.accepted = true; root.prevCollectionRequested(); return }
+            if (api.keys.isNextPage(event)) {
+                event.accepted = true
+                if (typeof soundManager !== 'undefined') {
+                    soundManager.playCollection()
+                }
+                root.nextCollectionRequested()
+                return
+            }
+            if (api.keys.isPrevPage(event)) {
+                event.accepted = true
+                if (typeof soundManager !== 'undefined') {
+                    soundManager.playCollection()
+                }
+                root.prevCollectionRequested()
+                return
+            }
         }
+
+
 
         Keys.onReleased: {
             if (api.keys.isAccept(event) && !event.isAutoRepeat) {
@@ -311,7 +333,7 @@ FocusScope {
                         }
                         text: card.game ? card.game.title.charAt(0).toUpperCase() : ""
                         color: themeManager.color("textTertiary")
-                        font { family: global.fonts.condensed; pixelSize: vpx(28); bold: true }
+                        font { family: fontManager.currentFont; pixelSize: vpx(28); bold: true }
                         visible: true
                     }
                 }

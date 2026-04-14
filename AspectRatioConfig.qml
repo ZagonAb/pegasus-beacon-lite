@@ -278,7 +278,7 @@ FocusScope {
                 Text {
                     text: "Aspect Ratio Settings"
                     color: themeManager.color("textPrimary")
-                    font { family: global.fonts.sans; pixelSize: vpx(22); bold: true }
+                    font { family: fontManager.currentFont; pixelSize: vpx(22); bold: true }
                     anchors.verticalCenter: parent.verticalCenter
                 }
             }
@@ -286,7 +286,7 @@ FocusScope {
                 anchors { right: parent.right; rightMargin: vpx(24); verticalCenter: parent.verticalCenter }
                 text: "B  Close"
                 color: themeManager.color("textSecondary")
-                font { family: global.fonts.sans; pixelSize: vpx(16) }
+                font { family: fontManager.currentFont; pixelSize: vpx(16) }
             }
         }
 
@@ -316,7 +316,7 @@ FocusScope {
                     Text {
                         text: "Change"
                         color: themeManager.color("textSecondary")
-                        font { family: global.fonts.sans; pixelSize: vpx(14) }
+                        font { family: fontManager.currentFont; pixelSize: vpx(14) }
                     }
                 }
                 Row {
@@ -329,7 +329,7 @@ FocusScope {
                     Text {
                         text: "Navigate"
                         color: themeManager.color("textSecondary")
-                        font { family: global.fonts.sans; pixelSize: vpx(14) }
+                        font { family: fontManager.currentFont; pixelSize: vpx(14) }
                     }
                 }
             }
@@ -350,7 +350,7 @@ FocusScope {
                 Text {
                     text: "Close and apply"
                     color: themeManager.color("textTertiary")
-                    font { family: global.fonts.sans; pixelSize: vpx(14) }
+                    font { family: fontManager.currentFont; pixelSize: vpx(14) }
                     anchors.verticalCenter: parent.verticalCenter
                 }
             }
@@ -432,7 +432,7 @@ FocusScope {
                         }
                         text: entry ? entry.label : ""
                         color: (isActive || isSelected) ? themeManager.color("textPrimary") : themeManager.color("textTertiary")
-                        font { family: global.fonts.sans; pixelSize: vpx(16); bold: isActive || isSelected }
+                        font { family: fontManager.currentFont; pixelSize: vpx(16); bold: isActive || isSelected }
                         elide: Text.ElideRight
                     }
 
@@ -496,7 +496,7 @@ FocusScope {
                 anchors { top: parent.top; left: parent.left; right: parent.right }
                 text: rightPane.currentEntry ? rightPane.currentEntry.label : ""
                 color: themeManager.color("textPrimary")
-                font { family: global.fonts.sans; pixelSize: vpx(20); bold: true }
+                font { family: fontManager.currentFont; pixelSize: vpx(20); bold: true }
                 wrapMode: Text.WordWrap
                 maximumLineCount: 4
                 elide: Text.ElideRight
@@ -510,7 +510,7 @@ FocusScope {
                 }
                 text: rightPane.currentEntry ? (rightPane.currentEntry.description || "") : ""
                 color: themeManager.color("textSecondary")
-                font { family: global.fonts.sans; pixelSize: vpx(13) }
+                font { family: fontManager.currentFont; pixelSize: vpx(13) }
                 wrapMode: Text.WordWrap
                 elide: Text.ElideRight
                 maximumLineCount: 2
@@ -566,7 +566,7 @@ FocusScope {
                     Text {
                         text: "Aspect Ratio"
                         color: themeManager.color("textSecondary")
-                        font { family: global.fonts.sans; pixelSize: vpx(12) }
+                        font { family: fontManager.currentFont; pixelSize: vpx(12) }
                     }
 
                     Text {
@@ -576,7 +576,7 @@ FocusScope {
                                 return root.ratioLabels[k] !== undefined ? root.ratioLabels[k] : (k === "" ? "Auto" : k)
                         }
                         color: themeManager.color("textPrimary")
-                        font { family: global.fonts.sans; pixelSize: vpx(20); bold: true }
+                        font { family: fontManager.currentFont; pixelSize: vpx(20); bold: true }
                     }
                 }
 
@@ -654,13 +654,13 @@ FocusScope {
                     Text {
                         text: "Fill Mode"
                         color: themeManager.color("textSecondary")
-                        font { family: global.fonts.sans; pixelSize: vpx(12) }
+                        font { family: fontManager.currentFont; pixelSize: vpx(12) }
                     }
 
                     Text {
                         text: root.fillLabels[fillMenuButton.currentFill] !== undefined ? root.fillLabels[fillMenuButton.currentFill] : fillMenuButton.currentFill
                         color: themeManager.color("textPrimary")
-                        font { family: global.fonts.sans; pixelSize: vpx(20); bold: true }
+                        font { family: fontManager.currentFont; pixelSize: vpx(20); bold: true }
                     }
                 }
 
@@ -725,7 +725,7 @@ FocusScope {
                         }
                         text: "Width"
                         color: themeManager.color("textTertiary")
-                        font { family: global.fonts.sans; pixelSize: vpx(16) }
+                        font { family: fontManager.currentFont; pixelSize: vpx(16) }
                     }
 
                     Rectangle {
@@ -826,7 +826,7 @@ FocusScope {
                         }
                         text: "Height"
                         color: themeManager.color("textTertiary")
-                        font { family: global.fonts.sans; pixelSize: vpx(16) }
+                        font { family: fontManager.currentFont; pixelSize: vpx(16) }
                     }
 
                     Rectangle {
@@ -926,7 +926,7 @@ FocusScope {
                     anchors { top: parent.top; horizontalCenter: parent.horizontalCenter }
                     text: "Preview"
                     color: themeManager.color("textTertiary")
-                    font { family: global.fonts.sans; pixelSize: vpx(16) }
+                    font { family: fontManager.currentFont; pixelSize: vpx(16) }
                 }
 
                 Item {
@@ -1193,7 +1193,7 @@ FocusScope {
                                 text: root.ratioLabels[modelData] !== undefined ? root.ratioLabels[modelData] : (modelData === "" ? "Auto" : modelData)
                                 color: isCurrent ? themeManager.color("textPrimary") : themeManager.color("textSecondary")
                                 font {
-                                    family: global.fonts.sans
+                                    family: fontManager.currentFont
                                     pixelSize: vpx(18)
                                     weight: isCurrent ? Font.DemiBold : Font.Normal
                                 }
@@ -1213,7 +1213,7 @@ FocusScope {
                                                                     return ""
                                 }
                                 color: themeManager.color("textTertiary")
-                                font { family: global.fonts.sans; pixelSize: vpx(16) }
+                                font { family: fontManager.currentFont; pixelSize: vpx(16) }
                                 elide: Text.ElideRight
                             }
                         }
@@ -1406,7 +1406,7 @@ FocusScope {
                                 text: root.fillLabels[modelData] !== undefined ? root.fillLabels[modelData] : modelData
                                 color: isCurrent ? themeManager.color("textPrimary") : themeManager.color("textSecondary")
                                 font {
-                                    family: global.fonts.sans
+                                    family: fontManager.currentFont
                                     pixelSize: vpx(18)
                                     weight: isCurrent ? Font.DemiBold : Font.Normal
                                 }
@@ -1421,7 +1421,7 @@ FocusScope {
                                                 return ""
                                 }
                                 color: themeManager.color("textTertiary")
-                                font { family: global.fonts.sans; pixelSize: vpx(16) }
+                                font { family: fontManager.currentFont; pixelSize: vpx(16) }
                                 elide: Text.ElideRight
                             }
                         }

@@ -278,7 +278,7 @@ FocusScope {
                                 return sn.substring(0, 3).toUpperCase()
                         }
                         color: delegateItem.isActive ? themeManager.color("textPrimary") : themeManager.color("textSecondary")
-                        font { family: global.fonts.condensed; pixelSize: vpx(18); bold: true }
+                        font { family: fontManager.currentFont; pixelSize: vpx(18); bold: true }
                     }
                 }
 
@@ -297,14 +297,14 @@ FocusScope {
                         text: delegateItem.collData ? delegateItem.collData.name : ""
                         color: delegateItem.isActive ? themeManager.color("textPrimary") : themeManager.color("textSecondary")
                         elide: Text.ElideRight
-                        font { family: global.fonts.sans; pixelSize: vpx(28); bold: delegateItem.isActive }
+                        font { family: fontManager.currentFont; pixelSize: vpx(28); bold: delegateItem.isActive }
                         Behavior on color { ColorAnimation { duration: 130 } }
                     }
 
                     Text {
                         text: delegateItem.collData ? (delegateItem.collData.games.count + " games") : ""
                         color: themeManager.color("textTertiary")
-                        font { family: global.fonts.sans; pixelSize: vpx(20) }
+                        font { family: fontManager.currentFont; pixelSize: vpx(20) }
                     }
                 }
 
@@ -380,14 +380,14 @@ FocusScope {
                             return sn.substring(0, 3).toUpperCase()
                     }
                     color: themeManager.color("textPrimary")
-                    font { family: global.fonts.condensed; pixelSize: vpx(18); bold: true }
+                    font { family: fontManager.currentFont; pixelSize: vpx(18); bold: true }
                 }
             }
 
             Text {
                 text: ghostItem.ghostData ? ghostItem.ghostData.name : ""
                 color: themeManager.color("textPrimary")
-                font { family: global.fonts.sans; pixelSize: vpx(28); bold: true }
+                font { family: fontManager.currentFont; pixelSize: vpx(28); bold: true }
                 anchors.verticalCenter: parent.verticalCenter
             }
         }

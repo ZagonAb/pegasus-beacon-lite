@@ -17,18 +17,18 @@ Item {
     readonly property string _memoryKey: "themeColor"
 
     readonly property var _colors: [
-        { label: "Emerald",  colorValue: "#10B981", style: "emerald" },
-        { label: "Amber",    colorValue: "#F59E0B", style: "amber" },
-        { label: "Fuchsia",  colorValue: "#D946EF", style: "fuchsia" },
+        { label: "Emerald", colorValue: "#10B981", style: "emerald" },
+        { label: "Amber", colorValue: "#F59E0B", style: "amber" },
+        { label: "Fuchsia", colorValue: "#D946EF", style: "fuchsia" },
         { label: "Sky Blue", colorValue: "#0EA5E9", style: "skyblue" },
-        { label: "Ruby",     colorValue: "#EF4444", style: "ruby" },
-        { label: "Purple",   colorValue: "#8B5CF6", style: "purple" },
-        { label: "Default",  colorValue: "",       style: "default" }
+        { label: "Ruby", colorValue: "#EF4444", style: "ruby" },
+        { label: "Purple", colorValue: "#8B5CF6", style: "purple" },
+        { label: "Default", colorValue: "", style: "default" }
     ]
 
     readonly property int _itemHeight: vpx(72)
     readonly property int _menuWidth: vpx(220)
-    readonly property int _maxVisibleItems: 7
+    readonly property int _maxVisibleItems: 4
     readonly property int _visibleItems: Math.min(_colors.length, _maxVisibleItems)
     readonly property int _menuHeight: _visibleItems * _itemHeight + vpx(12)
 
@@ -97,8 +97,8 @@ Item {
         ? root.anchorItem.mapToItem(root, 0, 0)
         : Qt.point(root.width / 2, root.height / 2)
 
-        property real _anchorCX:      _mapped.x + (root.anchorItem ? root.anchorItem.width / 2 : 0)
-        property real _anchorTopY:    _mapped.y
+        property real _anchorCX: _mapped.x + (root.anchorItem ? root.anchorItem.width / 2 : 0)
+        property real _anchorTopY: _mapped.y
         property real _anchorBottomY: _mapped.y + (root.anchorItem ? root.anchorItem.height : 0)
 
         property real _rawX: {
@@ -173,107 +173,6 @@ Item {
 
             model: root._colors
 
-            /*delegate: Rectangle {
-                id: itemDelegate
-                width: menuList.width
-                height: root._itemHeight
-                radius: vpx(8)
-
-                property bool isCurrent: ListView.isCurrentItem
-                property bool isActive: modelData.style === root.currentColor
-
-                color: isCurrent ? themeManager.color("surfaceHover") : "transparent"
-                Behavior on color { ColorAnimation { duration: 120 } }
-
-                Rectangle {
-                    anchors {
-                        left: parent.left
-                        verticalCenter: parent.verticalCenter
-                    }
-                    width: isActive ? vpx(3) : 0
-                    height: vpx(32)
-                    radius: vpx(2)
-                    color: themeManager.color("accent")
-                    Behavior on width { NumberAnimation { duration: 160 } }
-                }
-
-                MouseArea {
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    onEntered: menuList.currentIndex = index
-                    onClicked: {
-                        var chosen = modelData.style
-                        root._saveToMemory(chosen)
-                        root.colorSelected(chosen)
-                        root.close()
-                    }
-                }
-
-                Row {
-                    anchors {
-                        left: parent.left
-                        leftMargin: vpx(16)
-                        right: parent.right
-                        rightMargin: vpx(12)
-                        verticalCenter: parent.verticalCenter
-                    }
-                    spacing: vpx(14)
-
-                    // Color swatch
-                    Rectangle {
-                        width: vpx(36)
-                        height: vpx(36)
-                        radius: vpx(6)
-                        color: modelData.colorValue !== "" ? modelData.colorValue : (themeManager.currentTheme === "dark" ? "#FFFFFF" : "#212529")
-                        border.width: vpx(1)
-                        border.color: themeManager.color("borderLight")
-
-                        // For "Default", show a small icon instead of a plain color
-                        Text {
-                            anchors.centerIn: parent
-                            text: modelData.style === "default" ? "⚙" : ""
-                            color: themeManager.color("textPrimary")
-                            font.pixelSize: vpx(24)
-                            visible: modelData.style === "default"
-                        }
-                    }
-
-                    Column {
-                        anchors.verticalCenter: parent.verticalCenter
-                        spacing: vpx(4)
-
-                        Text {
-                            text: modelData.label
-                            color: {
-                                if (isActive) return themeManager.color("textPrimary")
-                                    if (isCurrent) return themeManager.color("textPrimary")
-                                        return themeManager.color("textTertiary")
-                            }
-                            font {
-                                family: global.fonts.sans
-                                pixelSize: vpx(22)
-                                weight: (isActive || isCurrent) ? Font.DemiBold : Font.Normal
-                            }
-                            Behavior on color { ColorAnimation { duration: 120 } }
-                        }
-
-                        Text {
-                            text: modelData.style === "default" ? "System default" : "Accent color"
-                            color: {
-                                if (isActive) return themeManager.color("textSecondary")
-                                    if (isCurrent) return themeManager.color("textSecondary")
-                                        return themeManager.color("textDisabled")
-                            }
-                            font {
-                                family: global.fonts.sans
-                                pixelSize: vpx(14)
-                            }
-                            Behavior on color { ColorAnimation { duration: 120 } }
-                        }
-                    }
-                }
-            }*/
-
             delegate: Rectangle {
                 id: itemDelegate
                 width: menuList.width
@@ -320,12 +219,10 @@ Item {
                     }
                     spacing: vpx(14)
 
-                    // Nuevo swatch con imagen y ColorOverlay
                     Item {
                         width: vpx(36)
                         height: vpx(36)
 
-                        // Fondo transparente con borde (opcional, para mantener el estilo)
                         Rectangle {
                             anchors.fill: parent
                             radius: vpx(6)
@@ -334,7 +231,6 @@ Item {
                             color: "transparent"
                         }
 
-                        // Imagen original (blanca/transparente)
                         Image {
                             id: dropIcon
                             anchors.centerIn: parent
@@ -343,16 +239,14 @@ Item {
                             source: "assets/icon/drop.svg"
                             sourceSize: Qt.size(width, height)
                             fillMode: Image.PreserveAspectFit
-                            visible: false   // Se usará solo como fuente para ColorOverlay
+                            visible: false
                         }
 
-                        // Overlay que aplica el color dinámico
                         ColorOverlay {
                             anchors.fill: dropIcon
                             source: dropIcon
                             color: {
                                 if (modelData.style === "default") {
-                                    // Color neutro según el tema (igual que el rectángulo original)
                                     return themeManager.currentTheme === "dark" ? "#FFFFFF" : "#212529"
                                 }
                                 return modelData.colorValue
@@ -372,7 +266,7 @@ Item {
                                         return themeManager.color("textTertiary")
                             }
                             font {
-                                family: global.fonts.sans
+                                family: fontManager.currentFont
                                 pixelSize: vpx(22)
                                 weight: (isActive || isCurrent) ? Font.DemiBold : Font.Normal
                             }
@@ -387,7 +281,7 @@ Item {
                                         return themeManager.color("textDisabled")
                             }
                             font {
-                                family: global.fonts.sans
+                                family: fontManager.currentFont
                                 pixelSize: vpx(14)
                             }
                             Behavior on color { ColorAnimation { duration: 120 } }

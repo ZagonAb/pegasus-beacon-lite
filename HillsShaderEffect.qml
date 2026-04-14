@@ -27,15 +27,12 @@ Item {
 
         property real u_time: rootItem.time
         property real u_theme: rootItem.theme
-
         property color u_waveColor1: rootItem.waveColor1
         property color u_waveColor2: rootItem.waveColor2
         property color u_waveColor3: rootItem.waveColor3
-
         property real u_waveOpacity1: rootItem.waveOpacity1
         property real u_waveOpacity2: rootItem.waveOpacity2
         property real u_waveOpacity3: rootItem.waveOpacity3
-
 
         fragmentShader: "
         #ifdef GL_ES
@@ -44,17 +41,14 @@ Item {
 
         uniform float u_time;
         uniform float u_theme;
-
         uniform vec4  u_waveColor1;
         uniform vec4  u_waveColor2;
         uniform vec4  u_waveColor3;
-
         uniform float u_waveOpacity1;
         uniform float u_waveOpacity2;
         uniform float u_waveOpacity3;
 
         varying vec2 qt_TexCoord0;
-
 
         vec4 alphaBlend(vec4 base, vec4 layer)
         {
@@ -63,7 +57,6 @@ Item {
             1.0
             );
     }
-
 
     void main()
     {
@@ -83,33 +76,23 @@ Item {
     cos(x * 0.8  + u_time * 0.07 + 0.5) * 0.050 +
     sin(x * 1.7  + u_time * 0.04 + 3.8) * 0.020;
 
-
     float y1 = 0.52 + w1;
     float y2 = 0.64 + w2;
     float y3 = 0.76 + w3;
-
-
     float edge = 0.002;
-
     float m1 = smoothstep(y1 - edge, y1 + edge, uv.y);
     float m2 = smoothstep(y2 - edge, y2 + edge, uv.y);
     float m3 = smoothstep(y3 - edge, y3 + edge, uv.y);
 
-
     vec3 bg = mix(vec3(0.0), vec3(1.0), u_theme);
-
     vec4 color = vec4(bg, 1.0);
-
-
     vec4 layer1 = vec4(u_waveColor1.rgb, u_waveOpacity1 * m1);
     vec4 layer2 = vec4(u_waveColor2.rgb, u_waveOpacity2 * m2);
     vec4 layer3 = vec4(u_waveColor3.rgb, u_waveOpacity3 * m3);
 
-
     color = alphaBlend(color, layer1);
     color = alphaBlend(color, layer2);
     color = alphaBlend(color, layer3);
-
 
     gl_FragColor = color;
     }

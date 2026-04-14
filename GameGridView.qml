@@ -96,22 +96,43 @@ FocusScope {
             model: root.gameModel
 
             Keys.onPressed: {
-                if (api.keys.isAccept(event)) {
-                    event.accepted = true
-                    if (event.isAutoRepeat) {
-                        if (!longPressTimer.running && root._acceptHeld) {
-                            longPressTimer.restart()
-                        }
-                    } else {
-                        if (!root._acceptHeld) {
-                            longPressTimer.restart()
-                            root._acceptHeld = true
-                        }
+                if (event.key === Qt.Key_Left || event.key === Qt.Key_Right ||
+                    event.key === Qt.Key_Up || event.key === Qt.Key_Down) {
+                    if (typeof soundManager !== 'undefined') {
+                        soundManager.playNavigation()
                     }
-                    return
-                }
-                if (api.keys.isNextPage(event)) { event.accepted = true; root.nextCollectionRequested(); return }
-                if (api.keys.isPrevPage(event))  { event.accepted = true; root.prevCollectionRequested(); return }
+                    }
+
+                    if (api.keys.isAccept(event)) {
+                        event.accepted = true
+                        if (event.isAutoRepeat) {
+                            if (!longPressTimer.running && root._acceptHeld) {
+                                longPressTimer.restart()
+                            }
+                        } else {
+                            if (!root._acceptHeld) {
+                                longPressTimer.restart()
+                                root._acceptHeld = true
+                            }
+                        }
+                        return
+                    }
+                    if (api.keys.isNextPage(event)) {
+                        event.accepted = true
+                        if (typeof soundManager !== 'undefined') {
+                            soundManager.playCollection()
+                        }
+                        root.nextCollectionRequested()
+                        return
+                    }
+                    if (api.keys.isPrevPage(event)) {
+                        event.accepted = true
+                        if (typeof soundManager !== 'undefined') {
+                            soundManager.playCollection()
+                        }
+                        root.prevCollectionRequested()
+                        return
+                    }
             }
 
             Keys.onReleased: {
@@ -345,7 +366,7 @@ FocusScope {
                                         width: parent.width - (favoriteIconWrapper.visible ? favoriteIconWrapper.width + parent.spacing : 0)
                                         text: cell.game ? cell.game.title : ""
                                         color: themeManager.effectiveAccentColor
-                                        font { family: global.fonts.sans; pixelSize: vpx(22); bold: true }
+                                        font { family: fontManager.currentFont; pixelSize: vpx(22); bold: true }
                                         wrapMode: Text.WordWrap
                                         maximumLineCount: 4
                                         elide: Text.ElideRight

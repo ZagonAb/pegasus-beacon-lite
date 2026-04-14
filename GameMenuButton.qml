@@ -52,7 +52,7 @@ Item {
                     anchors { left: btnIcon.right; leftMargin: vpx(14); verticalCenter: parent.verticalCenter }
                     text: btn.labelText
                     color: btn.isFocused ? themeManager.color("surface") : themeManager.color("textPrimary")
-                    font { family: global.fonts.sans; pixelSize: vpx(20); bold: true }
+                    font { family: fontManager.currentFont; pixelSize: vpx(20); bold: true }
                     Behavior on color { ColorAnimation { duration: 120 } }
                 }
             }

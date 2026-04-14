@@ -73,7 +73,7 @@ Item {
                 anchors { top: parent.top; left: parent.left; right: parent.right }
                 text: root.game ? root.game.title : ""
                 color: themeManager.color("textPrimary")
-                font { family: global.fonts.sans; pixelSize: vpx(26); bold: true }
+                font { family: fontManager.currentFont; pixelSize: vpx(26); bold: true }
                 elide: Text.ElideRight
             }
 

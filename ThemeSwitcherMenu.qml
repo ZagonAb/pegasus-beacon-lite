@@ -155,7 +155,7 @@ Item {
                             : row.isCurrent
                             ? themeManager.color("textPrimary")
                             : themeManager.color("textTertiary")
-                            font { family: global.fonts.sans; pixelSize: vpx(28); bold: row.isActive || row.isCurrent }
+                            font { family: fontManager.currentFont; pixelSize: vpx(28); bold: row.isActive || row.isCurrent }
                             Behavior on color { ColorAnimation { duration: 120 } }
                             anchors.verticalCenter: parent.verticalCenter
                         }
