@@ -7,13 +7,15 @@
 ![screen1](https://github.com/ZagonAb/pegasus-beacon-lite/blob/77969764114d28b0b1348d0ee2c6a6b74a87cdbd/.meta/screenshots/screen1.png)
 
 - **Icons:**  
+
   Some icons used in this project are provided by  
   [Iconify](https://icon-sets.iconify.design/).
   
-- **Audio**
+- **Audio:**
+
 Nintendo Coin Pickup by plasterbrain -- https://freesound.org/s/608433/ -- License: Creative Commons 0
 
-- **Font**
+- **Font:**
 
 This project bundles multiple fonts from Google Fonts.
 
