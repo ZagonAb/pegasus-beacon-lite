@@ -169,11 +169,9 @@ FocusScope {
         interval: 1500
         repeat: false
         onTriggered: {
-            //console.log("[theme] clearStateTimer fired — unsetting collectionIndex, gameIndex, gameTitle")
             api.memory.unset("collectionIndex")
             api.memory.unset("gameIndex")
             api.memory.unset("gameTitle")
-            //console.log("[theme] after unset — collectionIndex:", api.memory.get("collectionIndex"), "gameIndex:", api.memory.get("gameIndex"), "gameTitle:", api.memory.get("gameTitle"))
         }
     }
 
@@ -196,24 +194,20 @@ FocusScope {
         var savedGame = api.memory.get("gameIndex")
         var savedTitle = api.memory.get("gameTitle")
         var savedMode = api.memory.get("viewMode")
-        //console.log("[theme] onCompleted — savedCol:", savedCol, "savedGame:", savedGame, "savedTitle:", savedTitle, "savedMode:", savedMode)
         if (savedCol !== undefined && fullCollectionList.length > 0)
             currentCollectionIndex = Math.max(0, Math.min(savedCol, fullCollectionList.length - 1))
             if (savedMode !== undefined) viewMode = savedMode
                 if (savedTitle !== undefined && savedTitle !== "") {
                     Qt.callLater(function() {
                         var idx = _findGameIndexByTitle(savedTitle)
-                        //console.log("[theme] restore by title:", savedTitle, "-> index:", idx)
                         currentGameIndex = (idx >= 0) ? idx : 0
                     })
                 } else if (savedGame !== undefined) {
                     currentGameIndex = savedGame
                 }
                 if (savedCol !== undefined || savedGame !== undefined || savedTitle !== undefined) {
-                    //console.log("[theme] came from game — starting clearStateTimer")
                     clearStateTimer.start()
                 } else {
-                    //console.log("[theme] normal startup — no saved indices to clear")
                 }
                 root.forceActiveFocus()
     }
@@ -228,12 +222,10 @@ FocusScope {
             if (g && g.title) {
                 api.memory.set("gameTitle", g.title)
                 api.memory.unset("gameIndex")
-                //console.log("[theme] persistState virtual — title:", g.title)
             }
         } else {
             api.memory.set("gameIndex", currentGameIndex)
             api.memory.unset("gameTitle")
-            //console.log("[theme] persistState normal — index:", currentGameIndex)
         }
     }
 
@@ -420,13 +412,16 @@ FocusScope {
                     id: fallbackImage
                     anchors.fill: parent
                     source: bgArea.currentGame
-                    ? (bgArea.currentGame.assets.background
-                    || bgArea.currentGame.assets.screenshot || "") : ""
+                    ? (bgArea.currentGame.assets.background || bgArea.currentGame.assets.screenshot || "")
+                    : ""
                     fillMode: Image.PreserveAspectCrop
                     smooth: true
                     asynchronous: true
-                    opacity: videoPlayer.opacity < 1.0 ? 1.0 : 0.0
-                    Behavior on opacity { NumberAnimation { duration: 400; easing.type: Easing.InOutQuad } }
+
+                    opacity: videoPlayer.playbackState === MediaPlayer.PlayingState ? 0.0 : 1.0
+                    Behavior on opacity {
+                        NumberAnimation { duration: 400; easing.type: Easing.InOutQuad }
+                    }
                 }
 
                 Video {
@@ -438,36 +433,59 @@ FocusScope {
                     muted: true
                     volume: 0
                     visible: source !== ""
+
                     opacity: 0.0
-                    Behavior on opacity {
-                        NumberAnimation { duration: 500; easing.type: Easing.InOutQuad }
-                    }
 
                     onStatusChanged: {
-                        console.log("[Video] Status:", status, "Source:", source)
                         if (status === MediaPlayer.Loaded) {
-                            console.log("[Video] Loaded — esperando 1s antes de fade in")
                             play()
-                            videoRevealTimer.restart()
-                        } else if (status === MediaPlayer.NoMedia
-                            || status === MediaPlayer.InvalidMedia) {
+                            firstFrameTimer.start()
+                        } else if (status === MediaPlayer.NoMedia || status === MediaPlayer.InvalidMedia) {
                             opacity = 0.0
                             videoRevealTimer.stop()
-                            }
+                            firstFrameTimer.stop()
+                        }
                     }
 
                     onErrorChanged: {
                         if (error !== MediaPlayer.NoError) {
-                            console.log("[Video] Error:", error, errorString)
                             opacity = 0.0
                         }
                     }
 
                     onSourceChanged: {
-                        console.log("[Video] Source changed to:", source)
                         opacity = 0.0
                         videoRevealTimer.stop()
+                        firstFrameTimer.stop()
                     }
+
+                    onPlaybackStateChanged: {
+                        if (playbackState === MediaPlayer.PlayingState) {
+                        } else if (playbackState === MediaPlayer.StoppedState) {
+                            opacity = 0.0
+                        }
+                    }
+                }
+
+                Timer {
+                    id: firstFrameTimer
+                    interval: 50
+                    repeat: false
+                    onTriggered: {
+                        if (videoPlayer.playbackState === MediaPlayer.PlayingState) {
+                            console.log("[Video] Primer frame renderizado - haciendo fade in")
+                            fadeInAnimation.start()
+                        }
+                    }
+                }
+
+                PropertyAnimation {
+                    id: fadeInAnimation
+                    target: videoPlayer
+                    property: "opacity"
+                    to: 1.0
+                    duration: 500
+                    easing.type: Easing.InOutQuad
                 }
 
                 Rectangle {
@@ -529,7 +547,6 @@ FocusScope {
             sourceComponent: compVideoBackground
 
             onLoaded: {
-                console.log("[VideoLoader] Component loaded")
                 if (bgArea._videoSrc !== "") {
                     pendingVideoTimer.restart()
                 }
@@ -585,23 +602,18 @@ FocusScope {
             id: _videoDebounce
             interval: 150
             onTriggered: {
-                //console.log("[VideoDebounce] Triggered, videoSrc:", bgArea._videoSrc)
                 bgArea.applyVideoSource()
             }
         }
 
         function applyVideoSource() {
             if (!videoLoader.item || !videoLoader.item.videoPlayer) {
-                //console.log("[VideoDebounce] VideoLoader not ready, waiting...")
                 pendingVideoTimer.restart()
                 return
             }
 
             var player = videoLoader.item.videoPlayer
             var newSource = bgArea._videoSrc
-
-            //console.log("[VideoDebounce] Setting source to:", newSource)
-
             player.stop()
             player.source = ""
 
@@ -618,7 +630,6 @@ FocusScope {
             property string newSource: ""
             onTriggered: {
                 if (videoLoader.item && videoLoader.item.videoPlayer) {
-                    //console.log("[SetSourceTimer] Setting source:", newSource)
                     videoLoader.item.videoPlayer.source = newSource
                 }
             }
@@ -631,15 +642,12 @@ FocusScope {
             property int attempts: 0
             onTriggered: {
                 attempts++
-                //console.log("[PendingVideoTimer] Attempt", attempts)
 
                 if (videoLoader.item && videoLoader.item.videoPlayer) {
-                    //console.log("[PendingVideoTimer] VideoLoader now ready")
                     stop()
                     attempts = 0
                     bgArea.applyVideoSource()
                 } else if (attempts > 20) {
-                    //console.log("[PendingVideoTimer] Timeout waiting for VideoLoader")
                     stop()
                     attempts = 0
                 }
@@ -688,7 +696,6 @@ FocusScope {
             target: bgArea
             function onCurrentGameChanged() {
                 if (bgArea._isVideoMode) {
-                   //console.log("[bgArea] Game changed in video mode")
                     _videoDebounce.restart()
                 }
             }
