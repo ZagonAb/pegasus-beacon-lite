@@ -13,6 +13,16 @@
 - **Audio**
 Nintendo Coin Pickup by plasterbrain -- https://freesound.org/s/608433/ -- License: Creative Commons 0
 
+- **Font**
+
+This project bundles multiple fonts from Google Fonts.
+
+All fonts are licensed under the SIL Open Font License (OFL).  
+Copyright and license information for each font are preserved
+in their respective files within the `assets/fonts` directory.
+
+For more details, see the included OFL.txt.
+
 # Licence
 <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/"><img alt="Licencia Creative Commons" style="border-width:0" src="https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png" /></a><br /><a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/"></a>
 ---
