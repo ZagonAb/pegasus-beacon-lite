@@ -4,7 +4,7 @@
 
 ![screen0](https://github.com/ZagonAb/pegasus-beacon-lite/blob/cbe85dde1dd5913a6f4689447060ff29b8c8b55b/.meta/screenshots/screen0.png)
 
-![screen1](https://github.com/ZagonAb/pegasus-beacon-lite/blob/37e2dcc309e0ac223332903ab6af7044dba8db1d/.meta/screenshots/scree0.png)
+![screen1](https://github.com/ZagonAb/pegasus-beacon-lite/blob/f7164d26956ff88eaf77e7daa3e563539a294e12/.meta/screenshots/screen1.png)
 
 - **Icons:**  
 
