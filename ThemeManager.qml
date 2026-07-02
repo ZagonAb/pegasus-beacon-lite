@@ -20,6 +20,13 @@ QtObject {
                 return color("accent")
     }
 
+    readonly property color effectiveStaticAccentColor: {
+        if (accentColorName !== "default")
+            return accentColorValue
+            else
+                return "#FFFFFF"
+    }
+
     readonly property var _colorMap: ({
         "emerald":"#10B981",
         "amber":"#F59E0B",

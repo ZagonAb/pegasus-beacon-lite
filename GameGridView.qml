@@ -317,11 +317,11 @@ FocusScope {
 
                                 Rectangle {
                                     anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
-                                    height: vpx(80); radius: root.backdropEnabled ? vpx(4) : root.cornerRadius
+                                    height: vpx(120); radius: root.backdropEnabled ? vpx(4) : root.cornerRadius
                                     opacity: cell.isActive ? 1.0 : 0.0
                                     gradient: Gradient {
                                         GradientStop { position: 0.0; color: "transparent" }
-                                        GradientStop { position: 1.0; color: "#E8000000" }
+                                        GradientStop { position: 0.8; color: "black" }
                                     }
                                     Behavior on opacity { NumberAnimation { duration: 150 } }
                                 }
@@ -358,14 +358,14 @@ FocusScope {
                                         ColorOverlay {
                                             anchors.fill: favoriteIcon
                                             source: favoriteIcon
-                                            color: themeManager.effectiveAccentColor
+                                            color: themeManager.effectiveStaticAccentColor
                                         }
                                     }
 
                                     Text {
                                         width: parent.width - (favoriteIconWrapper.visible ? favoriteIconWrapper.width + parent.spacing : 0)
                                         text: cell.game ? cell.game.title : ""
-                                        color: themeManager.effectiveAccentColor
+                                        color: themeManager.effectiveStaticAccentColor
                                         font { family: fontManager.currentFont; pixelSize: vpx(22); bold: true }
                                         wrapMode: Text.WordWrap
                                         maximumLineCount: 4
