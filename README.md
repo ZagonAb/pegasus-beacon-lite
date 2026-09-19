@@ -2,9 +2,11 @@
 
 -  A theme for Pegasus Frontend, inspired by the Beacon Game Launcher.
 
-![screen0](https://github.com/ZagonAb/pegasus-beacon-lite/blob/ee6276847e6230e1145b7e9bad753d8c6b40063f/.meta/screenshots/screen0.png)
+![screen0](https://github.com/ZagonAb/pegasus-beacon-lite/blob/31c5c89090f6ee8e493f5a0ee9d47e6f43f5936a/.meta/screenshots/screen0.png)
 
-![screen1](https://github.com/ZagonAb/pegasus-beacon-lite/blob/ee6276847e6230e1145b7e9bad753d8c6b40063f/.meta/screenshots/screen1.png)
+![screen1](https://github.com/ZagonAb/pegasus-beacon-lite/blob/31c5c89090f6ee8e493f5a0ee9d47e6f43f5936a/.meta/screenshots/screen1.png)
+
+![screen2](https://github.com/ZagonAb/pegasus-beacon-lite/blob/31c5c89090f6ee8e493f5a0ee9d47e6f43f5936a/.meta/screenshots/screen2.png)
 
 - **Icons:**  
 
