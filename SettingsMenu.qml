@@ -31,6 +31,15 @@ FocusScope {
 
     property string updateState: "idle"
     property string updateLatestTag: ""
+    property string updateReleaseUrl: ""
+
+    onCurrentSectionChanged: {
+        var sec = sections[currentSection]
+        if (sec && sec.id === "about") {
+            updateState = "idle"
+            checkForUpdates()
+        }
+    }
 
     function _isNewerVersion(latest, current) {
         var a = latest.replace(/^v/, "").split(".").map(Number)
@@ -55,8 +64,10 @@ FocusScope {
                     var data = JSON.parse(xhr.responseText)
                     var tag = data.tag_name || ""
                     var ver = tag.replace(/^v/, "")
+                    var url = data.html_url || ""
                     if (ver && root._isNewerVersion(ver, root.currentVersion)) {
                         root.updateLatestTag = tag
+                        root.updateReleaseUrl = url
                         root.updateState = "update"
                     } else {
                         root.updateState = "latest"
@@ -80,7 +91,6 @@ FocusScope {
         arFocusSection = "list"
         sectionList.currentIndex = 0
         sectionList.forceActiveFocus()
-        checkForUpdates()
     }
 
     function _close() {
@@ -1245,24 +1255,54 @@ FocusScope {
                                         anchors.left: parent.left
 
                                         Text {
-                                            text: "Version 1.0.0"
+                                            text: "Version 1.0"
                                             color: themeManager.color("textSecondary")
                                             font { family: global.fonts.condensed; pixelSize: vpx(20) }
                                             anchors.verticalCenter: parent.verticalCenter
                                         }
 
-                                        Rectangle {
+                                        Item {
+                                            id: spinnerItem
+                                            width: vpx(20)
+                                            height: vpx(20)
                                             anchors.verticalCenter: parent.verticalCenter
-                                            visible: root.updateState !== "idle"
+                                            visible: root.updateState === "checking"
+
+                                            Image {
+                                                id: spinnerImg
+                                                anchors.fill: parent
+                                                source: "assets/icon/spinner.svg"
+                                                fillMode: Image.PreserveAspectFit
+                                                mipmap: true
+                                                visible: false
+                                            }
+
+                                            ColorOverlay {
+                                                anchors.fill: spinnerImg
+                                                source: spinnerImg
+                                                color: themeManager.color("textTertiary")
+                                            }
+
+                                            RotationAnimator {
+                                                target: spinnerItem
+                                                from: 0; to: 360
+                                                duration: 900
+                                                loops: Animation.Infinite
+                                                running: root.updateState === "checking"
+                                            }
+                                        }
+
+                                        Rectangle {
+                                            id: updateBadge
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            visible: root.updateState === "latest" || root.updateState === "update"
                                             height: vpx(24)
                                             width: updateBadgeText.implicitWidth + vpx(18)
                                             radius: vpx(12)
 
-                                            color: {
-                                                if (root.updateState === "checking") return themeManager.color("surfaceHover")
-                                                if (root.updateState === "update")   return themeManager.color("accent")
-                                                return themeManager.color("surfaceHover")
-                                            }
+                                            color: root.updateState === "update"
+                                                ? themeManager.color("accent")
+                                                : themeManager.color("surfaceHover")
 
                                             Behavior on color { ColorAnimation { duration: 200 } }
 
@@ -1271,18 +1311,22 @@ FocusScope {
                                                 anchors.centerIn: parent
                                                 font { family: global.fonts.condensed; pixelSize: vpx(14); bold: true }
 
-                                                text: {
-                                                    if (root.updateState === "checking") return "Checking..."
-                                                    if (root.updateState === "update")   return "New update " + root.updateLatestTag
-                                                    return "Latest version available"
-                                                }
+                                                text: root.updateState === "update"
+                                                    ? "New update " + root.updateLatestTag
+                                                    : "Latest version available"
 
-                                                color: {
-                                                    if (root.updateState === "update") return themeManager.color("surface")
-                                                    return themeManager.color("textTertiary")
-                                                }
+                                                color: root.updateState === "update"
+                                                    ? themeManager.color("surface")
+                                                    : themeManager.color("textTertiary")
 
                                                 Behavior on color { ColorAnimation { duration: 200 } }
+                                            }
+
+                                            MouseArea {
+                                                anchors.fill: parent
+                                                enabled: root.updateState === "update" && root.updateReleaseUrl !== ""
+                                                cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+                                                onClicked: Qt.openUrlExternally(root.updateReleaseUrl)
                                             }
                                         }
                                     }
