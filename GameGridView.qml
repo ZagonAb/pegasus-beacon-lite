@@ -49,6 +49,22 @@ FocusScope {
 
     function restoreFocus() { grid.forceActiveFocus() }
 
+    function restorePosition() {
+        var idx = root.currentGameIndex
+        if (idx <= 0) return
+        grid.highlightMoveDuration = 0
+        grid.positionViewAtIndex(idx, GridView.Visible)
+        Qt.callLater(function() {
+            grid.highlightMoveDuration = 0
+        })
+    }
+
+    Component.onCompleted: {
+        Qt.callLater(function() {
+            Qt.callLater(restorePosition)
+        })
+    }
+
     readonly property int cornerRadius: vpx(12)
     readonly property int columns: 5
     property bool _acceptHeld: false

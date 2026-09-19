@@ -26,6 +26,52 @@ FocusScope {
         { id: "about", label: "About", icon: "ℹ", hasContent: true }
     ]
 
+    readonly property string currentVersion: "1.0.0"
+    readonly property string _repoApi: "https://api.github.com/repos/ZagonAb/pegasus-beacon-lite/releases/latest"
+
+    property string updateState: "idle"
+    property string updateLatestTag: ""
+
+    function _isNewerVersion(latest, current) {
+        var a = latest.replace(/^v/, "").split(".").map(Number)
+        var b = current.replace(/^v/, "").split(".").map(Number)
+        var len = Math.max(a.length, b.length)
+        for (var i = 0; i < len; i++) {
+            if ((a[i] || 0) > (b[i] || 0)) return true
+            if ((a[i] || 0) < (b[i] || 0)) return false
+        }
+        return false
+    }
+
+    function checkForUpdates() {
+        if (updateState === "checking") return
+        updateState = "checking"
+        var xhr = new XMLHttpRequest()
+        xhr.open("GET", root._repoApi, true)
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState !== XMLHttpRequest.DONE) return
+            if (xhr.status === 200) {
+                try {
+                    var data = JSON.parse(xhr.responseText)
+                    var tag = data.tag_name || ""
+                    var ver = tag.replace(/^v/, "")
+                    if (ver && root._isNewerVersion(ver, root.currentVersion)) {
+                        root.updateLatestTag = tag
+                        root.updateState = "update"
+                    } else {
+                        root.updateState = "latest"
+                    }
+                } catch(e) {
+                    root.updateState = "latest"
+                }
+            } else {
+                root.updateState = "latest"
+            }
+        }
+        xhr.onerror = function() { root.updateState = "latest" }
+        xhr.send()
+    }
+
     function open() {
         isOpen = true
         currentSection = 0
@@ -34,6 +80,7 @@ FocusScope {
         arFocusSection = "list"
         sectionList.currentIndex = 0
         sectionList.forceActiveFocus()
+        checkForUpdates()
     }
 
     function _close() {
@@ -1193,10 +1240,51 @@ FocusScope {
                                         font { family: fontManager.currentFont; pixelSize: vpx(38); bold: true }
                                     }
 
-                                    Text {
-                                        text: "Version 1.0"
-                                        color: themeManager.color("textSecondary")
-                                        font { family: global.fonts.condensed; pixelSize: vpx(20) }
+                                    Row {
+                                        spacing: vpx(12)
+                                        anchors.left: parent.left
+
+                                        Text {
+                                            text: "Version 1.0.0"
+                                            color: themeManager.color("textSecondary")
+                                            font { family: global.fonts.condensed; pixelSize: vpx(20) }
+                                            anchors.verticalCenter: parent.verticalCenter
+                                        }
+
+                                        Rectangle {
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            visible: root.updateState !== "idle"
+                                            height: vpx(24)
+                                            width: updateBadgeText.implicitWidth + vpx(18)
+                                            radius: vpx(12)
+
+                                            color: {
+                                                if (root.updateState === "checking") return themeManager.color("surfaceHover")
+                                                if (root.updateState === "update")   return themeManager.color("accent")
+                                                return themeManager.color("surfaceHover")
+                                            }
+
+                                            Behavior on color { ColorAnimation { duration: 200 } }
+
+                                            Text {
+                                                id: updateBadgeText
+                                                anchors.centerIn: parent
+                                                font { family: global.fonts.condensed; pixelSize: vpx(14); bold: true }
+
+                                                text: {
+                                                    if (root.updateState === "checking") return "Checking..."
+                                                    if (root.updateState === "update")   return "New update " + root.updateLatestTag
+                                                    return "Latest version available"
+                                                }
+
+                                                color: {
+                                                    if (root.updateState === "update") return themeManager.color("surface")
+                                                    return themeManager.color("textTertiary")
+                                                }
+
+                                                Behavior on color { ColorAnimation { duration: 200 } }
+                                            }
+                                        }
                                     }
                                 }
                             }

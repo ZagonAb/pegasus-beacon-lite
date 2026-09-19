@@ -377,6 +377,9 @@ FocusScope {
                 clip: true
                 focus: root.panelFocused && root.focusSection === "list"
 
+                highlight: Rectangle { radius: vpx(10); color: "transparent" }
+                highlightMoveDuration: 140
+
                 Keys.onUpPressed: { decrementCurrentIndex(); event.accepted = true }
                 Keys.onDownPressed: { incrementCurrentIndex(); event.accepted = true }
 
